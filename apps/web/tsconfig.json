@@ -1,0 +1,21 @@
+{
+  "extends": "@cardinalxchange/config/tsconfig/next.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "@/app/*": ["./app/*"],
+      "@/features/*": ["./features/*"],
+      "@/server/*": ["./server/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/utils/*": ["./utils/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

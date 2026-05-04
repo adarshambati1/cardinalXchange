@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum QuestionStatus {
+  OPEN
+  ANSWERED
+  ACCEPTED
+}
+
+enum AiChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum AiChatSourceKind {
+  INTERNAL_QUESTION
+  INTERNAL_ANSWER
+  WEB
+}
+
+model Question {
+  id             String           @id @default(cuid())
+  slug           String           @unique
+  title          String           @db.VarChar(180)
+  body           String
+  authorName     String           @db.VarChar(80)
+  authorMeta     String?          @db.VarChar(120)
+  status         QuestionStatus   @default(OPEN)
+  searchText     String           @default("")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  lastActivityAt DateTime         @default(now())
+  answers        Answer[]
+  tags           QuestionTag[]
+  aiChatSources  AiChatSource[]   @relation("AiChatSourceQuestion")
+
+  @@index([status, lastActivityAt])
+  @@index([createdAt])
+  @@index([lastActivityAt])
+}
+
+model Answer {
+  id            String             @id @default(cuid())
+  questionId    String
+  question      Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  body          String
+  authorName    String             @db.VarChar(80)
+  authorMeta    String?            @db.VarChar(120)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  aiChatSources AiChatSource[]     @relation("AiChatSourceAnswer")
+
+  @@index([questionId, createdAt])
+}
+
+model Tag {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  label     String        @db.VarChar(80)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  questions QuestionTag[]
+
+  @@index([label])
+}
+
+model QuestionTag {
+  questionId String
+  tagId      String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@index([tagId])
+}
+
+model AiChatSession {
+  id         String          @id @default(cuid())
+  title      String?         @db.VarChar(180)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  messages   AiChatMessage[]
+  sources    AiChatSource[]
+
+  @@index([createdAt])
+}
+
+model AiChatMessage {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    AiChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       AiChatRole
+  uiMessageId String?        @db.VarChar(120)
+  content    String
+  parts      Json            @default("[]")
+  model      String?         @db.VarChar(120)
+  confidence Float?
+  createdAt  DateTime        @default(now())
+  sources    AiChatSource[]
+
+  @@index([sessionId, createdAt])
+  @@index([role, createdAt])
+  @@index([uiMessageId])
+}
+
+model AiChatSource {
+  id               String           @id @default(cuid())
+  sessionId        String
+  messageId        String?
+  kind             AiChatSourceKind
+  title            String           @db.VarChar(240)
+  url              String?          @db.VarChar(500)
+  snippet          String
+  sourceQuestionId String?
+  sourceAnswerId   String?
+  createdAt        DateTime         @default(now())
+  session          AiChatSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  message          AiChatMessage?   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sourceQuestion   Question?        @relation("AiChatSourceQuestion", fields: [sourceQuestionId], references: [id], onDelete: SetNull)
+  sourceAnswer     Answer?          @relation("AiChatSourceAnswer", fields: [sourceAnswerId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([messageId])
+  @@index([sourceQuestionId])
+  @@index([sourceAnswerId])
+}

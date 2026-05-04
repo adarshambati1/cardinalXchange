@@ -1,0 +1,12 @@
+{
+  "name": "@cardinalxchange/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": ["tsconfig"],
+  "scripts": {
+    "build": "tsc --version",
+    "lint": "tsc --version",
+    "typecheck": "tsc --version",
+    "test": "tsc --version"
+  }
+}

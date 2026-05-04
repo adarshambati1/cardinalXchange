@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: cardinalxchange-postgres
+    environment:
+      POSTGRES_DB: cardinalxchange
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    volumes:
+      - cardinalxchange-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cardinalxchange"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+    container_name: cardinalxchange-web
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cardinalxchange
+      DIRECT_URL: postgresql://postgres:postgres@postgres:5432/cardinalxchange
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      SEED_DATABASE: "1"
+    ports:
+      - "3000:3000"
+
+volumes:
+  cardinalxchange-postgres:

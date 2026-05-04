@@ -1,0 +1,31 @@
+{
+  "name": "cardinalxchange",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "db:deploy": "pnpm --filter @cardinalxchange/db prisma:deploy",
+    "db:generate": "pnpm --filter @cardinalxchange/db prisma:generate",
+    "db:migrate": "pnpm --filter @cardinalxchange/db prisma:dev",
+    "db:push": "pnpm --filter @cardinalxchange/db db:push",
+    "db:seed": "pnpm --filter @cardinalxchange/db db:seed",
+    "db:studio": "pnpm --filter @cardinalxchange/db prisma:studio",
+    "db:validate": "pnpm --filter @cardinalxchange/db prisma:validate",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.4",
+    "eslint": "9.39.4",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.8.3",
+    "prettier-plugin-tailwindcss": "0.8.0",
+    "turbo": "2.9.8",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.59.1"
+  }
+}
