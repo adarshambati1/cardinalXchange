@@ -15,8 +15,11 @@ export function RelatedQuestions({
   heading = "Related questions",
   limit = 4,
 }: RelatedQuestionsProps) {
-  if (sources.length === 0) return null;
-  const visible = sources.slice(0, limit);
+  const internal = sources.filter(
+    (source) => source.kind === "question" || source.kind === "answer",
+  );
+  if (internal.length === 0) return null;
+  const visible = internal.slice(0, limit);
 
   return (
     <section className="mt-3 flex flex-col gap-2">

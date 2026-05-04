@@ -71,7 +71,7 @@ export function CitationBubble({ index, source }: CitationBubbleProps) {
       <button
         aria-expanded={open}
         aria-label={`Source ${label}: ${source.title}`}
-        className="inline-flex items-center align-baseline border border-[var(--color-border-default)] bg-[var(--color-surface-sunk)] px-1.5 py-0 text-[11px] font-semibold leading-[1.4] text-[var(--color-cardinal-500)] hover:bg-[var(--color-cardinal-500)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+        className="inline-flex items-center align-baseline rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-sunk)] px-1.5 py-0 text-[11px] font-semibold leading-[1.4] text-[var(--color-cardinal-500)] hover:border-[var(--color-cardinal-500)] hover:bg-[var(--color-cardinal-500)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
         onBlur={scheduleClose}
         onClick={() => setOpen((prev) => !prev)}
         onFocus={openNow}
@@ -81,12 +81,12 @@ export function CitationBubble({ index, source }: CitationBubbleProps) {
       </button>
       {open ? (
         <span
-          className="absolute left-0 top-full z-20 mt-1 w-80 max-w-[22rem] border border-[var(--color-border-default)] bg-[var(--color-surface-base)] p-3 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+          className="absolute left-0 top-full z-20 mt-1 w-80 max-w-[22rem] rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] p-3 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
           onMouseEnter={openNow}
           onMouseLeave={scheduleClose}
           role="dialog"
         >
-          <span className="inline-flex items-center border border-[var(--color-border-default)] bg-[var(--color-surface-sunk)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
+          <span className="inline-flex items-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-sunk)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
             {kindBadge(source.kind)}
           </span>
           <span className="mt-2 block font-semibold text-[var(--color-ink-900)]">

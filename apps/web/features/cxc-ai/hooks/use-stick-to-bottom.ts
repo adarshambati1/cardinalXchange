@@ -1,30 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-const STICK_THRESHOLD_PX = 64;
+const STICK_THRESHOLD_PX = 96;
 
-export function useStickToBottom<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
+/**
+ * Tracks whether the document is scrolled near the bottom of the viewport.
+ * Used to gate auto-scroll-on-new-message so we never yank a user who has
+ * scrolled up to read history.
+ */
+export function useStickToBottom() {
   const [isAtBottom, setIsAtBottom] = useState<boolean>(true);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const el = ref.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior });
+    if (typeof window === "undefined") return;
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior,
+    });
   }, []);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (typeof window === "undefined") return;
     const onScroll = () => {
-      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const distance =
+        document.documentElement.scrollHeight -
+        window.scrollY -
+        window.innerHeight;
       setIsAtBottom(distance < STICK_THRESHOLD_PX);
     };
-    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => el.removeEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return { ref, isAtBottom, scrollToBottom };
+  return { isAtBottom, scrollToBottom };
 }

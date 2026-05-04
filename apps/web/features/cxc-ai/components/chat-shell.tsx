@@ -32,8 +32,7 @@ export function ChatShell({
   const isBusy = status === "submitted" || status === "streaming";
   const hasMessages = messages.length > 0;
 
-  const { ref: scrollRef, isAtBottom, scrollToBottom } =
-    useStickToBottom<HTMLElement>();
+  const { isAtBottom, scrollToBottom } = useStickToBottom();
   useEffect(() => {
     if (isAtBottom) {
       scrollToBottom("smooth");
@@ -57,24 +56,22 @@ export function ChatShell({
 
   if (!hasMessages) {
     return (
-      <div className="flex h-[calc(100vh-7rem)] w-full flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center px-4">
-          <div className="w-full max-w-2xl">
-            <h1 className="font-serif text-4xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-5xl text-center">
-              How can I help?
-            </h1>
-            <p className="mt-3 text-center text-sm text-[var(--color-ink-500)]">
-              Answers grounded in public CardinalXchange questions and answers.
-            </p>
-            <div className="mt-8">
-              <PromptInput
-                autoFocus
-                onSend={handleSend}
-                onStop={() => stop()}
-                placeholder="Ask anything about Stanford."
-                status={promptStatus}
-              />
-            </div>
+      <div className="flex min-h-[calc(100vh-68px)] w-full flex-col items-center justify-center px-4">
+        <div className="mx-auto w-full max-w-[760px]">
+          <h1 className="text-center font-serif text-4xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-5xl">
+            How can I help?
+          </h1>
+          <p className="mt-3 text-center text-sm text-[var(--color-ink-500)]">
+            Answers grounded in public CardinalXchange questions and answers.
+          </p>
+          <div className="mt-8">
+            <PromptInput
+              autoFocus
+              onSend={handleSend}
+              onStop={() => stop()}
+              placeholder="Ask anything about Stanford."
+              status={promptStatus}
+            />
           </div>
         </div>
       </div>
@@ -82,8 +79,8 @@ export function ChatShell({
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] w-full flex-col">
-      <header className="border-b border-[var(--color-border-default)] pb-3">
+    <div className="flex min-h-[calc(100vh-68px)] w-full flex-col">
+      <header className="sticky top-[68px] z-10 border-b border-[var(--color-border-default)] bg-[var(--color-surface-base)] py-3">
         <h1 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-3xl">
           CXC AI
         </h1>
@@ -91,25 +88,25 @@ export function ChatShell({
 
       <section
         aria-label="Conversation"
-        className="relative flex flex-1 min-h-0 flex-col gap-6 overflow-y-auto py-6"
-        ref={scrollRef}
+        className="flex flex-1 flex-col gap-6 py-6 pb-32"
       >
         <MessageList isStreaming={isBusy} messages={messages} />
-        {!isAtBottom ? (
-          <button
-            aria-label="Scroll to latest"
-            className="sticky bottom-4 ml-auto inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-700)] shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
-            onClick={() => scrollToBottom("smooth")}
-            type="button"
-          >
-            <ArrowDown aria-hidden className="h-4 w-4" />
-          </button>
-        ) : null}
       </section>
+
+      {!isAtBottom ? (
+        <button
+          aria-label="Scroll to latest"
+          className="fixed bottom-32 right-8 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-700)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+          onClick={() => scrollToBottom("smooth")}
+          type="button"
+        >
+          <ArrowDown aria-hidden className="h-4 w-4" />
+        </button>
+      ) : null}
 
       {error ? (
         <div
-          className="mb-3 border border-[var(--color-state-danger)] bg-[var(--color-surface-base)] px-3 py-2 text-sm font-medium text-[var(--color-state-danger)]"
+          className="sticky bottom-[88px] mx-auto w-full max-w-3xl rounded-md border border-[var(--color-state-danger)] bg-[var(--color-surface-base)] px-3 py-2 text-sm font-medium text-[var(--color-state-danger)]"
           role="alert"
         >
           CXC AI could not finish that response.{" "}
@@ -124,7 +121,7 @@ export function ChatShell({
         </div>
       ) : null}
 
-      <div className="border-t border-[var(--color-border-default)] py-3">
+      <div className="sticky bottom-0 z-10 border-t border-[var(--color-border-default)] bg-[var(--color-surface-base)] py-3">
         <PromptInput
           onSend={handleSend}
           onStop={() => stop()}

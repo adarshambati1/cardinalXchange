@@ -26,6 +26,9 @@ export async function getAiChatSessionRecord(
 
 export async function listAiChatSessionRecords(): Promise<AiChatSessionRecord[]> {
   return prisma.aiChatSession.findMany({
+    where: {
+      messages: { some: {} },
+    },
     include: aiChatSessionInclude,
     orderBy: {
       updatedAt: "desc",

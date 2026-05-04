@@ -215,8 +215,51 @@ User screenshot showed "hi" producing a wall of text: an extractive draft header
 
 Verified: `pnpm typecheck` ✅, `pnpm lint` ✅. Screenshots: `/tmp/cxc-screens/hi-final.png` (trivial), `/tmp/cxc-screens/cards-final.png` (cards visible).
 
+## Pass 6 — Coordinator design + eng review (CONVERGED)
+
+Auto-decided block + fix + polish, applied within scope (`app/cxc-ai/*`, `features/cxc-ai/*`). Shared shell components untouched.
+
+### Changes
+
+- **P1–P3 (viewport block + sticky rail)** — `chat-shell.tsx` rewritten to use natural document flow instead of an inner `h-[calc(100vh-7rem)] overflow-y-auto` container, so the body scrolls and sticky rails actually stick. Header is `sticky top-[68px]` (sits below the top bar). Composer is `sticky bottom-0` with a top border + opaque background so it stays anchored at the viewport bottom while messages scroll up. Empty state uses `min-h-[calc(100vh-68px)] flex items-center justify-center` so "How can I help?" stays vertically centered without forcing a fixed height. Floating ArrowDown jump-to-latest button moved from inside the messages section to `fixed bottom-32 right-8` since the messages section no longer scrolls internally.
+- **`chat-history-rail.tsx`** — added `sticky top-[68px] h-[calc(100vh-68px)] self-start overflow-y-auto` to the `<nav>`, exactly mirroring `TopicRail`'s pattern. The rail now stays put while the user scrolls a long chat.
+- **`use-stick-to-bottom.ts`** — switched from element ref scroll tracking to `window` scroll tracking so the hook works with the new document-scrolls layout. `scrollToBottom` now calls `window.scrollTo({ top: documentElement.scrollHeight })`. Threshold widened to 96px to account for the sticky composer's height when deciding "near bottom".
+- **P4 (citation chip polish)** — `citation-bubble.tsx` trigger and popover both got `rounded-md`. Hover state also picks up the cardinal border for parity with primary buttons. Inner kind chip (`Q`/`A`/`Web`) inside the popover got `rounded-md` for consistency.
+- **P5 (tool-chain badge polish)** — `tool-chain.tsx` Running/Done/Error badges converted from text-only to bordered pills: `inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide leading-none`. Border colors match the status (cardinal for Running, default for Done, danger for Error).
+
+### Verification
+
+- `pnpm typecheck` → all 4 workspaces successful.
+- `pnpm lint` → all 4 workspaces successful with `--max-warnings=0`.
+- Fresh 1440×900 screenshots:
+  - Empty state: `/tmp/cxc-screens/CONVERGED-empty.png` — centered "How can I help?" + autoFocused prompt with cardinal focus ring; TopicRail + ChatHistoryRail + page balanced inside the new wider PageShell container (`mx-auto max-w-[1600px]`).
+  - Populated state: `/tmp/cxc-screens/CONVERGED-populated.png` — sticky CXC AI header, cardinal-red user bubble right-aligned, assistant prose, RELATED QUESTIONS card list (Q/A badges + title + snippet preview + ArrowUpRight), sticky composer at bottom, sticky chat-history rail showing "Today" bucket with active row highlighted.
+- Side-by-side vs canonical bottom-right panel: structurally matched — top bar, two left rails, no right rail, wide chat surface, inline user bubble + prose assistant + sticky composer. The only intentional deviation from the image is the empty-state copy ("How can I help?") which we ported from the Haleum architecture (the canonical image happens to show a populated thread, which is also covered).
+
+CONVERGED — chat-history rail stays visible while scrolling, citation chips and tool-chain badges are uniformly `rounded-md`, viewport layout flows from a single document scroll.
+
 ## Notes / open items
 
 - **No model key locally.** `.env`'s `OPENAI_API_KEY` is empty, so the live exercise was the fallback path. The AI path was reviewed structurally (`streamText` → `toUIMessageStream` → `onFinish` → `persistFinishedTurn`) but cannot be live-tested in this environment without setting a key.
 - **Pre-existing "New CXC AI chat" rows in the rail.** The chat history rail shows ~20 rows from earlier wave tests where sessions were created without a first user message landing. These are real DB rows; the brief says don't seed and don't reset. Left in place. Future cleanup is a DB concern, not a feature concern.
 - **No shared-shell changes needed.** The `PageShell` already supports `secondaryRail` and `sideRail={null}`, so this page's layout doesn't need any `packages/ui` or shell edits.
+
+## Pass 7 — CONVERGED (B1 + B2 + F2 + F3, the substantive review findings)
+
+Earlier "CONVERGED" only addressed P3/P4/P5. Reopening for the four BLOCK + FIX items the coordinator review flagged as substantive.
+
+- **B1 — Filter empty history sessions.** `packages/db/src/cxc.queries.ts` `listAiChatSessionRecords` now adds `where: { messages: { some: {} } }` so sessions with zero persisted messages never reach the rail. Wiped legacy rows once with `docker exec -i cardinalxchange-postgres psql -U postgres -d cardinalxchange -c 'DELETE FROM "AiChatSession" WHERE id NOT IN (SELECT DISTINCT "sessionId" FROM "AiChatMessage")'` → `DELETE 20`. The "Pre-existing 'New CXC AI chat' rows in the rail" open item from the original notes is now resolved.
+- **B2 — ChatHistoryRail active = gray pill (matches TopicRail).** `apps/web/features/cxc-ai/components/chat-history-rail.tsx`: removed `border-l-[3px]` + cardinal-red active bar. Active row is now `bg-[var(--color-ink-100)] font-semibold text-[var(--color-ink-900)]`; inactive is `text-[var(--color-ink-700)] hover:bg-[var(--color-ink-50)] hover:text-[var(--color-ink-900)]`. Same shape and palette as `TopicRail`, so the two left rails read as one system. Kept `rounded-md`.
+- **F2 — Empty-state composer width.** `apps/web/features/cxc-ai/components/chat-shell.tsx`: empty state inner container changed from `w-full max-w-2xl` (672px) to `mx-auto w-full max-w-[760px]`. The "Ask anything about Stanford." composer no longer reads as undersized on a 1440px viewport.
+- **F3 — RelatedQuestions guard.** `apps/web/features/cxc-ai/components/related-questions.tsx`: now filters incoming sources to `kind === "question" || kind === "answer"` and returns `null` when the filtered list is empty. Web-only or empty source lists no longer render an empty section under fallback responses.
+
+### Verification
+
+- `pnpm typecheck` → 4/4 successful.
+- `pnpm lint` → 4/4 successful with `--max-warnings=0`.
+- `DELETE 20` confirmed via psql; `SELECT id, title FROM "AiChatSession"` now shows 6 real chats with content.
+- Fresh 1440×900 screenshots:
+  - Empty state: `/tmp/cxc-screens/CONVERGED2-empty.png` — sidebar contains only real chats (no "New CXC AI chat" rows), composer reads ~760px wide on a 1440px viewport, "How can I help?" centered.
+  - Populated (`/cxc-ai/cards-fix2`): `/tmp/cxc-screens/CONVERGED2-populated.png` — active "access" row uses the gray pill (no cardinal-red left bar), TopicRail's active "CXC AI" row uses the same gray pill, RelatedQuestions section renders because sources are question/answer kind, sticky composer at bottom, sticky chat-history rail on left.
+
+CONVERGED — all coordinator review findings (B1, B2, F2, F3 plus prior P3, P4, P5) addressed.

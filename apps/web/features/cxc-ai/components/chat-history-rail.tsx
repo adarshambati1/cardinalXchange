@@ -41,7 +41,7 @@ export function ChatHistoryRail({ sessions }: ChatHistoryRailProps) {
   return (
     <nav
       aria-label="Chat history"
-      className="hidden w-[220px] shrink-0 flex-col gap-3 py-6 pr-2 lg:flex"
+      className="sticky top-[68px] hidden h-[calc(100vh-68px)] w-[220px] shrink-0 flex-col gap-3 self-start overflow-y-auto py-6 pr-2 lg:flex"
     >
       <Link
         className="flex h-11 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] px-3 text-sm font-semibold text-[var(--color-ink-900)] transition-colors duration-150 ease-out hover:border-[var(--color-border-strong)] hover:bg-[var(--color-ink-50)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
@@ -71,24 +71,17 @@ export function ChatHistoryRail({ sessions }: ChatHistoryRailProps) {
                       <Link
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "flex h-11 flex-col justify-center rounded-md border-l-[3px] px-3 transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-inset",
+                          "flex h-11 flex-col justify-center rounded-md px-3 transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-inset",
                           active
-                            ? "border-l-[var(--color-cardinal-500)] bg-[var(--color-ink-50)]"
-                            : "border-l-transparent hover:bg-[var(--color-ink-50)]",
+                            ? "bg-[var(--color-ink-100)] font-semibold text-[var(--color-ink-900)]"
+                            : "text-[var(--color-ink-700)] hover:bg-[var(--color-ink-50)] hover:text-[var(--color-ink-900)]",
                         )}
                         href={`/cxc-ai/${encodeURIComponent(session.id)}`}
                       >
-                        <span
-                          className={cn(
-                            "block truncate text-[13px] leading-tight",
-                            active
-                              ? "font-semibold text-[var(--color-ink-900)]"
-                              : "text-[var(--color-ink-700)]",
-                          )}
-                        >
+                        <span className="block truncate text-[13px] leading-tight">
                           {session.title || "Untitled chat"}
                         </span>
-                        <span className="mt-0.5 truncate text-[11px] text-[var(--color-ink-500)]">
+                        <span className="mt-0.5 truncate text-[11px] font-normal text-[var(--color-ink-500)]">
                           {formatBucketTime(group.key, timestamp, now)}
                         </span>
                       </Link>

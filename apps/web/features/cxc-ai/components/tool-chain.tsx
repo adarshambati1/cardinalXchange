@@ -66,18 +66,21 @@ function statusFor(state: ToolState, hasOutput: boolean): {
   if (state === "output-error") {
     return {
       label: "Error",
-      className: "text-[var(--color-state-danger)]",
+      className:
+        "border-[var(--color-state-danger)] bg-[var(--color-surface-base)] text-[var(--color-state-danger)]",
     };
   }
   if (state === "output-available" || hasOutput) {
     return {
       label: "Done",
-      className: "text-[var(--color-ink-500)]",
+      className:
+        "border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-500)]",
     };
   }
   return {
     label: "Running",
-    className: "text-[var(--color-cardinal-500)]",
+    className:
+      "border-[var(--color-cardinal-500)] bg-[var(--color-surface-base)] text-[var(--color-cardinal-500)]",
   };
 }
 
@@ -167,7 +170,7 @@ function ToolStep({
         </span>
         <span
           className={cn(
-            "ml-auto text-[11px] font-medium uppercase tracking-wide",
+            "ml-auto inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide leading-none",
             status.className,
           )}
         >
