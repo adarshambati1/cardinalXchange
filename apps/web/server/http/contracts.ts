@@ -9,6 +9,12 @@ export type QuestionTagDto = {
   kind: TagKind;
 };
 
+export type TagListItemDto = {
+  slug: string;
+  label: string;
+  questionCount: number;
+};
+
 export type QuestionSummaryDto = {
   id: string;
   slug: string;

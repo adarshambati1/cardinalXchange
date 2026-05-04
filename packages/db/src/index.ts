@@ -39,3 +39,7 @@ export {
   ensureAiChatSessionRecord,
   replaceAiChatSessionMessages,
 } from "./cxc.mutations";
+export {
+  listTagsWithCounts,
+  type TagWithCountRecord,
+} from "./tags.queries";

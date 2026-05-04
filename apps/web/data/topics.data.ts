@@ -34,7 +34,7 @@ export const railSections: ReadonlyArray<RailSection> = [
     items: [
       { id: "questions", label: "Questions", href: "/questions" },
       { id: "ask", label: "Ask", href: "/ask" },
-      { id: "tags", label: "Tags", href: "/questions#tags" },
+      { id: "tags", label: "Tags", href: "/tags" },
     ],
   },
   {

@@ -120,6 +120,9 @@ function resolveActiveId(pathname: string): RailTopic["id"] | null {
   if (pathname.startsWith("/ask")) {
     return "ask";
   }
+  if (pathname.startsWith("/tags")) {
+    return "tags";
+  }
   if (pathname.startsWith("/questions")) {
     return "questions";
   }
