@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-import { TopCommandBar } from "@/features/shell/components/top-command-bar";
+import { PageShell } from "@/features/shell";
 
 import { mono, sans, serif } from "./fonts";
 import "./globals.css";
@@ -26,10 +26,7 @@ export default function RootLayout({
       className={`${sans.variable} ${serif.variable} ${mono.variable}`}
     >
       <body>
-        <div className="bg-paper text-graphite-950 min-h-screen">
-          <TopCommandBar />
-          {children}
-        </div>
+        <PageShell>{children}</PageShell>
       </body>
     </html>
   );

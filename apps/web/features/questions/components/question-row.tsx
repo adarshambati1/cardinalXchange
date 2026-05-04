@@ -1,51 +1,62 @@
 import Link from "next/link";
 
-import type { QuestionSummaryDto } from "@/server/http/contracts";
+import type { QuestionRowDto } from "@/server/http/contracts";
 
-export function QuestionRow({ question }: { question: QuestionSummaryDto }) {
+/**
+ * A single feed row. Title is the primary link; tags link to the filtered
+ * feed; meta line shows author / answer count / time. Square corners,
+ * 1px ink-100 divider between rows (handled by the parent feed list).
+ */
+export function QuestionRow({ question }: { question: QuestionRowDto }) {
   const answerCount = question.answers;
 
   return (
     <article
-      className="border-graphite-100 hover:bg-graphite-50 border-b px-4 py-4 transition last:border-b-0 sm:px-5"
+      className="px-4 py-4 transition-colors duration-150 ease-out hover:bg-[var(--color-ink-50)] sm:px-5"
       id={question.id}
     >
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-graphite-950 min-w-0 text-[15px] leading-snug font-black sm:text-base">
-            <Link
-              className="hover:text-cardinal-800 focus-visible:ring-cardinal-600 rounded-sm transition outline-none focus-visible:ring-2"
-              href={`/questions/${question.slug}`}
-            >
-              {question.title}
-            </Link>
-          </h2>
-        </div>
-        <p className="text-graphite-600 mt-1 line-clamp-2 text-sm leading-5">
+        <h2 className="text-[var(--color-ink-900)] text-[15px] font-semibold leading-snug">
+          <Link
+            className="rounded-none transition-colors duration-150 ease-out hover:text-[var(--color-cardinal-500)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+            href={`/questions/${question.slug}`}
+          >
+            {question.title}
+          </Link>
+        </h2>
+        <p className="mt-1 line-clamp-2 text-sm leading-snug text-[var(--color-ink-700)]">
           {question.excerpt}
         </p>
-        <div className="text-graphite-500 mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {question.tags.map((tag) => (
-              <Link
-                className="border-graphite-200 bg-graphite-50 text-graphite-700 hover:border-cardinal-200 hover:text-cardinal-800 rounded-md border px-2 py-1 text-xs font-semibold transition"
-                href={`/questions?tag=${tag.slug}#questions`}
-                key={`${question.id}-${tag.slug}`}
-              >
-                {tag.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <span>{answerCount === 1 ? "1 answer" : `${answerCount} answers`}</span>
-            {answerCount === 0 ? <span>unanswered</span> : null}
-            <span>
-              <span className="text-graphite-800">{question.author}</span> asked{" "}
-              {question.askedAt}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {question.tags.map((tag) => (
+            <Link
+              className="inline-flex items-center border border-[var(--color-border-default)] bg-[var(--color-surface-base)] px-2 py-0.5 text-xs font-medium leading-none text-[var(--color-ink-700)] transition-colors duration-150 ease-out hover:border-[var(--color-cardinal-500)] hover:text-[var(--color-cardinal-500)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+              href={`/questions?tag=${tag.slug}`}
+              key={`${question.id}-${tag.slug}`}
+            >
+              {tag.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-ink-500)]">
+          <span>
+            asked by{" "}
+            <span className="font-medium text-[var(--color-ink-700)]">
+              {question.author}
             </span>
-          </div>
+          </span>
+          <span aria-hidden>·</span>
+          <span>
+            {answerCount === 1 ? "1 answer" : `${answerCount} answers`}
+          </span>
+          <span aria-hidden>·</span>
+          <span>{question.askedAt}</span>
         </div>
       </div>
     </article>
   );
 }
+
+export default QuestionRow;

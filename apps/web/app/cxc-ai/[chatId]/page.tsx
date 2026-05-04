@@ -1,4 +1,4 @@
-import { CxcAiChat } from "@/features/cxc-ai/components/chat-shell";
+import { ChatShell } from "@/features/cxc-ai";
 import { getAiChatSnapshot } from "@/server/cxc-ai/services/chat.service";
 
 type CxcAiChatPageProps = {
@@ -9,6 +9,7 @@ export default async function CxcAiChatPage({ params }: CxcAiChatPageProps) {
   const { chatId } = await params;
   const snapshot = await getAiChatSnapshot(chatId);
 
-  return <CxcAiChat chatId={chatId} initialMessages={snapshot.messages} />;
+  return (
+    <ChatShell chatId={chatId} initialMessages={snapshot.messages} />
+  );
 }
-

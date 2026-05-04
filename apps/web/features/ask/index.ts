@@ -1,1 +1,1 @@
-export {};
+export { AskForm } from "./components/ask-form";

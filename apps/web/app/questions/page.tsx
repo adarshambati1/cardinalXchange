@@ -1,129 +1,127 @@
 import Link from "next/link";
 
-import { QuestionFeed } from "@/features/questions/components/question-feed";
-import type {
-  QuestionSummaryDto,
-  QuestionTagDto,
-} from "@/server/http/contracts";
-import { listQuestions } from "@/server/questions/questions.service";
+import { QuestionFeed } from "@/features/questions";
+import { listQuestionsForFeed } from "@/server/questions/questions.service";
+import type { FeedSort } from "@/server/questions/questions.types";
 
 type QuestionsPageProps = {
   searchParams: Promise<{
-    filter?: string;
     tag?: string;
+    sort?: string;
+    query?: string;
   }>;
 };
+
+const SORT_OPTIONS: ReadonlyArray<{ id: FeedSort; label: string }> = [
+  { id: "newest", label: "Newest" },
+  { id: "active", label: "Active" },
+  { id: "unanswered", label: "Unanswered" },
+];
 
 export default async function QuestionsPage({
   searchParams,
 }: QuestionsPageProps) {
-  const { filter, tag } = await searchParams;
-  const questions = await listQuestions();
-  const visibleQuestions = questions.filter((question) => {
-    if (filter === "unanswered" && question.answers > 0) {
-      return false;
-    }
+  const params = await searchParams;
+  const tag = params.tag?.trim() || undefined;
+  const sort = isFeedSort(params.sort) ? params.sort : undefined;
+  const query = params.query?.trim() ?? "";
 
-    if (tag && !question.tags.some((questionTag) => questionTag.slug === tag)) {
-      return false;
-    }
-
-    return true;
-  });
-  const tags = getTagCounts(questions);
-  const unansweredCount = questions.filter((question) => question.answers === 0).length;
+  const questions = await listQuestionsForFeed({ tag, sort });
+  const filtered = query
+    ? questions.filter((question) =>
+        question.title.toLowerCase().includes(query.toLowerCase()) ||
+        question.excerpt.toLowerCase().includes(query.toLowerCase()),
+      )
+    : questions;
 
   return (
-    <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <div className="min-w-0 space-y-6">
-        <section className="border-graphite-200 shadow-graphite-950/[0.03] rounded-lg border bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-cardinal-700 text-sm font-bold">
-                CardinalXchange
-              </p>
-              <h1 className="text-graphite-950 mt-2 text-2xl font-black tracking-normal sm:text-3xl">
-                Stanford Q&A
-              </h1>
-              <p className="text-graphite-600 mt-2 max-w-2xl text-sm leading-6">
-                Ask focused questions, add tags, and help classmates find
-                answers that stay useful after the thread moves on.
-              </p>
-            </div>
-            <Link
-              className="bg-cardinal-700 shadow-cardinal-950/10 hover:bg-cardinal-800 focus-visible:ring-cardinal-600 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-semibold text-white shadow-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              href="/ask"
-            >
-              Ask Question
-            </Link>
-          </div>
-        </section>
+    <div className="mx-auto w-full max-w-4xl px-6 py-8 sm:px-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border-default)] pb-4">
+        <div className="min-w-0">
+          <h1
+            className="font-serif text-3xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-4xl"
+            style={{ borderRadius: "var(--radius-title)" }}
+          >
+            Questions
+          </h1>
+          {tag ? (
+            <p className="mt-2 text-sm text-[var(--color-ink-500)]">
+              Filtered by tag{" "}
+              <span className="font-medium text-[var(--color-ink-900)]">
+                {tag}
+              </span>
+              .{" "}
+              <Link
+                className="text-[var(--color-cardinal-500)] underline-offset-2 hover:underline"
+                href="/questions"
+              >
+                Clear
+              </Link>
+            </p>
+          ) : null}
+          {query ? (
+            <p className="mt-2 text-sm text-[var(--color-ink-500)]">
+              Showing matches for{" "}
+              <span className="font-medium text-[var(--color-ink-900)]">
+                {query}
+              </span>
+              .
+            </p>
+          ) : null}
+        </div>
+      </header>
 
-        <QuestionFeed activeFilter={filter} questions={visibleQuestions} />
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-b border-[var(--color-border-default)] pb-4">
+        {SORT_OPTIONS.map((option) => {
+          const active = (sort ?? "newest") === option.id;
+          const href = sortHref({ sort: option.id, tag, query });
+          return (
+            <Link
+              aria-current={active ? "page" : undefined}
+              className={`inline-flex h-8 items-center border px-3 text-xs font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] ${
+                active
+                  ? "border-[var(--color-cardinal-500)] bg-[var(--color-cardinal-500)] text-white"
+                  : "border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-700)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-ink-900)]"
+              }`}
+              href={href}
+              key={option.id}
+            >
+              {option.label}
+            </Link>
+          );
+        })}
       </div>
 
-      <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <section
-          className="border-graphite-200 shadow-graphite-950/[0.03] rounded-lg border bg-white p-4 shadow-sm"
-          id="tags"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-graphite-950 text-base font-black">Tags</h2>
-            <Link
-              className="text-cardinal-700 hover:text-cardinal-800 text-xs font-bold"
-              href="/questions"
-            >
-              Clear
-            </Link>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tags.map((tagItem) => (
-              <Link
-                className={`rounded-md border px-2 py-1 text-xs font-semibold transition ${
-                  tag === tagItem.slug
-                    ? "border-cardinal-200 bg-cardinal-50 text-cardinal-800"
-                    : "border-graphite-200 bg-graphite-50 text-graphite-700 hover:border-cardinal-200 hover:text-cardinal-800"
-                }`}
-                href={`/questions?tag=${tagItem.slug}#questions`}
-                key={tagItem.slug}
-              >
-                {tagItem.label} ({tagItem.count})
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-graphite-200 shadow-graphite-950/[0.03] rounded-lg border bg-white p-4 shadow-sm">
-          <h2 className="text-graphite-950 text-base font-black">Unanswered</h2>
-          <p className="text-graphite-600 mt-2 text-sm leading-6">
-            {unansweredCount} questions need a first answer.
-          </p>
-          <Link
-            className="border-graphite-200 text-graphite-900 hover:border-graphite-300 hover:bg-graphite-50 focus-visible:ring-cardinal-600 mt-3 inline-flex h-9 items-center justify-center rounded-md border bg-white px-3 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-            href="/questions?filter=unanswered#questions"
-          >
-            View unanswered
-          </Link>
-        </section>
-      </aside>
-    </main>
+      <div className="mt-6">
+        <QuestionFeed questions={filtered} />
+      </div>
+    </div>
   );
 }
 
-function getTagCounts(questions: QuestionSummaryDto[]) {
-  const tags = new Map<string, QuestionTagDto & { count: number }>();
+function isFeedSort(value: string | undefined): value is FeedSort {
+  return value === "newest" || value === "active" || value === "unanswered";
+}
 
-  questions.forEach((question) => {
-    question.tags.forEach((tag) => {
-      const current = tags.get(tag.slug);
-      tags.set(tag.slug, {
-        ...tag,
-        count: current ? current.count + 1 : 1,
-      });
-    });
-  });
-
-  return Array.from(tags.values()).sort((first, second) =>
-    first.label.localeCompare(second.label),
-  );
+function sortHref({
+  sort,
+  tag,
+  query,
+}: {
+  sort: FeedSort;
+  tag?: string;
+  query?: string;
+}): string {
+  const params = new URLSearchParams();
+  if (sort !== "newest") {
+    params.set("sort", sort);
+  }
+  if (tag) {
+    params.set("tag", tag);
+  }
+  if (query) {
+    params.set("query", query);
+  }
+  const search = params.toString();
+  return search ? `/questions?${search}` : "/questions";
 }

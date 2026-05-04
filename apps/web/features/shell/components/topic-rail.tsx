@@ -1,35 +1,59 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 import { cn } from "@cardinalxchange/ui";
 
-const forumNav = [
-  { label: "Questions", href: "/questions" },
-  { label: "CXC AI", href: "/cxc-ai" },
-  { label: "Ask Question", href: "/ask" },
-];
+import { railTopics, type RailTopic } from "@/data/topics.data";
 
-export function TopicRail({ compact = false }: { compact?: boolean }) {
-  const className = compact
-    ? "flex gap-2 overflow-x-auto border-b border-graphite-200 bg-paper px-4 py-3 lg:hidden"
-    : "hidden space-y-1 lg:block";
+/**
+ * Left rail with the four canonical entries: CXC AI / Questions / Topics /
+ * Trending. Active item gets a 3px cardinal-red left bar and a bold label;
+ * everything else stays neutral. Square hit targets, no rounded pills.
+ */
+export function TopicRail() {
+  const pathname = usePathname() ?? "/";
+  const activeId = resolveActiveId(pathname);
 
   return (
-    <nav aria-label="Question navigation" className={className}>
-      {forumNav.map((item, index) => (
-        <Link
-          className={cn(
-            compact
-              ? "focus-visible:ring-cardinal-600 inline-flex h-8 shrink-0 items-center justify-center rounded-md px-3 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              : "focus-visible:ring-cardinal-600 flex h-10 items-center rounded-md px-3 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none",
-            index === 0
-              ? "bg-cardinal-50 text-cardinal-900"
-              : "text-graphite-700 hover:bg-graphite-100 hover:text-graphite-950",
-          )}
-          href={item.href}
-          key={item.label}
-        >
-          {item.label}
-        </Link>
-      ))}
+    <nav
+      aria-label="Sections"
+      className="hidden w-48 shrink-0 border-r border-[var(--color-border-default)] bg-[var(--color-surface-base)] py-4 lg:block"
+    >
+      <ul className="flex flex-col">
+        {railTopics.map((topic) => {
+          const active = topic.id === activeId;
+          return (
+            <li key={topic.id}>
+              <Link
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex h-10 items-center border-l-[3px] px-4 text-sm transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-inset",
+                  active
+                    ? "border-l-[var(--color-cardinal-500)] bg-[var(--color-ink-50)] font-semibold text-[var(--color-ink-900)]"
+                    : "border-l-transparent text-[var(--color-ink-700)] hover:bg-[var(--color-ink-50)] hover:text-[var(--color-ink-900)]",
+                )}
+                href={topic.href}
+              >
+                {topic.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }
+
+function resolveActiveId(pathname: string): RailTopic["id"] | null {
+  if (pathname.startsWith("/cxc-ai")) {
+    return "cxc-ai";
+  }
+  if (pathname === "/" || pathname.startsWith("/questions") || pathname.startsWith("/ask")) {
+    return "questions";
+  }
+  return null;
+}
+
+export default TopicRail;
