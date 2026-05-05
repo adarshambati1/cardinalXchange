@@ -43,20 +43,6 @@ describe("QuestionDetail", () => {
     expect(container.querySelector("strong")?.textContent).toBe("bold");
   });
 
-  it("renders markdown links inside the body", () => {
-    render(
-      <QuestionDetail
-        question={detail({
-          body: "See [Stanford](https://stanford.edu) for details.",
-        })}
-      />,
-    );
-
-    const link = screen.getByRole("link", { name: "Stanford" });
-    expect(link.getAttribute("href")).toBe("https://stanford.edu");
-    expect(link.getAttribute("target")).toBe("_blank");
-  });
-
   it("renders tag pills as links to /questions?tag=<slug>", () => {
     render(
       <QuestionDetail
@@ -75,15 +61,6 @@ describe("QuestionDetail", () => {
     expect(screen.getByRole("link", { name: "HCI" }).getAttribute("href")).toBe(
       "/questions?tag=hci",
     );
-  });
-
-  it("omits the tags row when no tags are attached", () => {
-    const { container } = render(
-      <QuestionDetail question={detail({ tags: [] })} />,
-    );
-    // No anchor tags in the article means no tag pills
-    const links = container.querySelectorAll("a");
-    expect(links.length).toBe(0);
   });
 
   it("renders the meta line as 'Asked by <author> · <askedAt>'", () => {

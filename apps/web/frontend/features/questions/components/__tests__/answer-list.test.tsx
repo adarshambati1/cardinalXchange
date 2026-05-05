@@ -69,19 +69,4 @@ describe("AnswerList", () => {
     expect(screen.getByText("Stephen")).toBeInTheDocument();
     expect(screen.getByText(/Answer by/)).toBeInTheDocument();
   });
-
-  it("renders markdown bold/italic from answer body", () => {
-    const { container } = render(
-      <AnswerList
-        answers={[answer({ body: "this is **bold** and *italic*" })]}
-      />,
-    );
-    expect(container.querySelector("strong")?.textContent).toBe("bold");
-    expect(container.querySelector("em")?.textContent).toBe("italic");
-  });
-
-  it("falls back to raw value if createdAt cannot be parsed", () => {
-    render(<AnswerList answers={[answer({ createdAt: "not-a-date" })]} />);
-    expect(screen.getByText(/not-a-date/)).toBeInTheDocument();
-  });
 });

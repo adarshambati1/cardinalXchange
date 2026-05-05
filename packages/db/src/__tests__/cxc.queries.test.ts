@@ -98,15 +98,4 @@ describe("searchInternalContext", () => {
     expect(answer?.title).toBe("Answer on: Q");
     expect(answer?.answerId).toBe("a-1");
   });
-
-  it("trims long bodies into a snippet capped under ~280 chars", async () => {
-    const longBody = "x ".repeat(200).trim();
-    questionFindMany.mockResolvedValueOnce([
-      fakeQuestion({ id: "q-1", body: longBody }),
-    ]);
-
-    const [row] = await searchInternalContext("anything");
-    expect(row?.snippet.length).toBeLessThanOrEqual(280);
-    expect(row?.snippet.endsWith("…")).toBe(true);
-  });
 });

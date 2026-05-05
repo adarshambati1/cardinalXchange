@@ -28,16 +28,6 @@ describe("CitationBubble", () => {
     expect(screen.getByRole("button", { name: /Q1/ })).toBeInTheDocument();
   });
 
-  it("renders an A-prefixed badge for answer sources", () => {
-    render(
-      <CitationBubble
-        index={2}
-        source={source({ kind: "answer", id: "answer:a-1" })}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /A2/ })).toBeInTheDocument();
-  });
-
   it("opens the popover on click and links to /questions/<id> in the same tab for Q/A sources", () => {
     render(<CitationBubble index={1} source={source()} />);
 

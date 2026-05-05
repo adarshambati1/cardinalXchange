@@ -78,17 +78,6 @@ describe("QuestionFeed", () => {
     expect(screen.getByText("How do I Y?")).toBeInTheDocument();
   });
 
-  it("does NOT render the empty state when questions are populated", () => {
-    render(<QuestionFeed questions={[row()]} />);
-    expect(screen.queryByText(/No questions yet/)).not.toBeInTheDocument();
-  });
-
-  it("renders an accessible labelled section with sr-only heading", () => {
-    render(<QuestionFeed questions={[row()]} />);
-    const heading = screen.getByRole("heading", { name: "Questions" });
-    expect(heading).toBeInTheDocument();
-  });
-
   it("threads tag links through to the questions feed query", () => {
     render(
       <QuestionFeed

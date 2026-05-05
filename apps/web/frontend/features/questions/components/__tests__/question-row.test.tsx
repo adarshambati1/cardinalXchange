@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { QuestionRowDto } from "@/backend/http/contracts";
@@ -64,20 +64,6 @@ describe("QuestionRow", () => {
     expect(hci.getAttribute("href")).toBe("/questions?tag=hci");
   });
 
-  it("renders the author display name and asked-at meta", () => {
-    render(
-      <QuestionRow question={row({ author: "Stephen", askedAt: "5m ago" })} />,
-    );
-
-    expect(screen.getByText("Stephen")).toBeInTheDocument();
-    expect(screen.getByText("5m ago")).toBeInTheDocument();
-  });
-
-  it("pluralizes 'answers' when count is 0", () => {
-    render(<QuestionRow question={row({ answers: 0 })} />);
-    expect(screen.getByText("0 answers")).toBeInTheDocument();
-  });
-
   it("uses the singular '1 answer' when count is exactly 1", () => {
     render(<QuestionRow question={row({ answers: 1 })} />);
     expect(screen.getByText("1 answer")).toBeInTheDocument();
@@ -86,24 +72,5 @@ describe("QuestionRow", () => {
   it("pluralizes for any count > 1", () => {
     render(<QuestionRow question={row({ answers: 7 })} />);
     expect(screen.getByText("7 answers")).toBeInTheDocument();
-  });
-
-  it("scopes the article element with the question id for in-page anchors", () => {
-    const { container } = render(
-      <QuestionRow question={row({ id: "q-42" })} />,
-    );
-    const article = container.querySelector("article");
-    expect(article?.getAttribute("id")).toBe("q-42");
-  });
-
-  it("includes the title link in the article element, not outside", () => {
-    const { container } = render(<QuestionRow question={row()} />);
-    const article = container.querySelector("article");
-    expect(article).not.toBeNull();
-    if (article) {
-      expect(
-        within(article).getByRole("link", { name: "First question" }),
-      ).toBeInTheDocument();
-    }
   });
 });

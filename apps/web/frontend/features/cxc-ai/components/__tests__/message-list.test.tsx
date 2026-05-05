@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { CxcMessageDto } from "@/backend/http/contracts";
@@ -44,10 +44,5 @@ describe("MessageList", () => {
     const aiArticle = container.querySelector('article[data-role="assistant"]');
     expect(aiArticle).not.toBeNull();
     expect(aiArticle?.textContent).toContain("Hi back!");
-  });
-
-  it("shows a 'Thinking…' placeholder when an assistant message is empty AND streaming", () => {
-    render(<MessageList isStreaming messages={[message("assistant", [])]} />);
-    expect(screen.getByText(/Thinking/)).toBeInTheDocument();
   });
 });

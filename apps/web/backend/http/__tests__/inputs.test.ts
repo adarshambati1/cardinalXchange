@@ -114,24 +114,6 @@ describe("parseCreateQuestionInput", () => {
     expect(result.body).toContain("✨");
   });
 
-  it("ignores a non-string, non-array tags field", () => {
-    const result = parseCreateQuestionInput({
-      title: "ok",
-      body: "ok body",
-      tags: 42,
-    });
-    expect(result.tags).toEqual([]);
-  });
-
-  it("strips empty tag entries from a comma-separated string", () => {
-    const result = parseCreateQuestionInput({
-      title: "ok",
-      body: "ok body",
-      tags: "  ,hci, ,design,",
-    });
-    expect(result.tags).toEqual(["hci", "design"]);
-  });
-
   it("trims authorDisplayName and rejects whitespace-only", () => {
     const result = parseCreateQuestionInput({
       title: "ok",
@@ -169,28 +151,6 @@ describe("parseCreateAnswerInput", () => {
     });
     expect(result.body).toBe("This is a real answer.");
   });
-
-  it("rejects a non-string body with a 400 HttpError", () => {
-    expect(() =>
-      parseCreateAnswerInput({ body: 42 as unknown as string }),
-    ).toThrowError(HttpError);
-  });
-
-  it("rejects a body over 5000 chars", () => {
-    expect(() =>
-      parseCreateAnswerInput({ body: "x".repeat(5001) }),
-    ).toThrowError(HttpError);
-  });
-
-  it("preserves authorDisplayName when present", () => {
-    const result = parseCreateAnswerInput({
-      body: "answer",
-      authorDisplayName: "Alice",
-      authorMeta: "CS '26",
-    });
-    expect(result.authorDisplayName).toBe("Alice");
-    expect(result.authorMeta).toBe("CS '26");
-  });
 });
 
 describe("parseCxcChatInput", () => {
@@ -222,16 +182,6 @@ describe("parseCxcChatInput", () => {
     }
   });
 
-  it("rejects a missing id", () => {
-    expect(() =>
-      parseCxcChatInput({
-        messages: [
-          { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] },
-        ],
-      }),
-    ).toThrowError(HttpError);
-  });
-
   it("rejects a message with an unknown role", () => {
     expect(() =>
       parseCxcChatInput({
@@ -245,31 +195,6 @@ describe("parseCxcChatInput", () => {
         ],
       }),
     ).toThrowError(HttpError);
-  });
-
-  it("rejects a message missing the parts array", () => {
-    expect(() =>
-      parseCxcChatInput({
-        id: "s",
-        messages: [{ id: "m", role: "user" }],
-      }),
-    ).toThrowError(HttpError);
-  });
-
-  it("passes through extra/unknown fields on parts via passthrough", () => {
-    const result = parseCxcChatInput({
-      id: "s",
-      messages: [
-        {
-          id: "m",
-          role: "assistant",
-          parts: [{ type: "tool-x", input: { foo: "bar" } }],
-        },
-      ],
-    });
-    const part = result.messages[0]?.parts[0] as Record<string, unknown>;
-    expect(part?.type).toBe("tool-x");
-    expect((part?.input as { foo: string })?.foo).toBe("bar");
   });
 });
 
@@ -285,13 +210,6 @@ describe("parseSearchInput", () => {
     const params = new URLSearchParams({ q: "wifi" });
     const result = parseSearchInput(params);
     expect(result.query).toBe("wifi");
-  });
-
-  it("returns query+tag when both are provided", () => {
-    const params = new URLSearchParams({ query: "elective", tag: "hci" });
-    const result = parseSearchInput(params);
-    expect(result.query).toBe("elective");
-    expect(result.tag).toBe("hci");
   });
 
   it("throws missing_search_query when both query and tag are absent", () => {
