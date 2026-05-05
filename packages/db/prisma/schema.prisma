@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,6 +11,11 @@ enum QuestionStatus {
   OPEN
   ANSWERED
   ACCEPTED
+}
+
+enum UserRole {
+  STUDENT
+  MODERATOR
 }
 
 enum AiChatRole {
@@ -25,38 +31,44 @@ enum AiChatSourceKind {
 }
 
 model Question {
-  id             String           @id @default(cuid())
-  slug           String           @unique
-  title          String           @db.VarChar(180)
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  title          String         @db.VarChar(180)
   body           String
-  authorName     String           @db.VarChar(80)
-  authorMeta     String?          @db.VarChar(120)
-  status         QuestionStatus   @default(OPEN)
-  searchText     String           @default("")
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  lastActivityAt DateTime         @default(now())
+  authorId       String?
+  author         User?          @relation("UserQuestions", fields: [authorId], references: [id], onDelete: SetNull)
+  authorName     String         @db.VarChar(80)
+  authorMeta     String?        @db.VarChar(120)
+  status         QuestionStatus @default(OPEN)
+  searchText     String         @default("")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  lastActivityAt DateTime       @default(now())
   answers        Answer[]
   tags           QuestionTag[]
-  aiChatSources  AiChatSource[]   @relation("AiChatSourceQuestion")
+  aiChatSources  AiChatSource[] @relation("AiChatSourceQuestion")
 
   @@index([status, lastActivityAt])
   @@index([createdAt])
   @@index([lastActivityAt])
+  @@index([authorId])
 }
 
 model Answer {
-  id            String             @id @default(cuid())
+  id            String         @id @default(cuid())
   questionId    String
-  question      Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question      Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
   body          String
-  authorName    String             @db.VarChar(80)
-  authorMeta    String?            @db.VarChar(120)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  aiChatSources AiChatSource[]     @relation("AiChatSourceAnswer")
+  authorId      String?
+  author        User?          @relation("UserAnswers", fields: [authorId], references: [id], onDelete: SetNull)
+  authorName    String         @db.VarChar(80)
+  authorMeta    String?        @db.VarChar(120)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  aiChatSources AiChatSource[] @relation("AiChatSourceAnswer")
 
   @@index([questionId, createdAt])
+  @@index([authorId])
 }
 
 model Tag {
@@ -81,28 +93,28 @@ model QuestionTag {
 }
 
 model AiChatSession {
-  id         String          @id @default(cuid())
-  title      String?         @db.VarChar(180)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  messages   AiChatMessage[]
-  sources    AiChatSource[]
+  id        String          @id @default(cuid())
+  title     String?         @db.VarChar(180)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  messages  AiChatMessage[]
+  sources   AiChatSource[]
 
   @@index([createdAt])
 }
 
 model AiChatMessage {
-  id         String          @id @default(cuid())
-  sessionId  String
-  session    AiChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role       AiChatRole
+  id          String         @id @default(cuid())
+  sessionId   String
+  session     AiChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        AiChatRole
   uiMessageId String?        @db.VarChar(120)
-  content    String
-  parts      Json            @default("[]")
-  model      String?         @db.VarChar(120)
-  confidence Float?
-  createdAt  DateTime        @default(now())
-  sources    AiChatSource[]
+  content     String
+  parts       Json           @default("[]")
+  model       String?        @db.VarChar(120)
+  confidence  Float?
+  createdAt   DateTime       @default(now())
+  sources     AiChatSource[]
 
   @@index([sessionId, createdAt])
   @@index([role, createdAt])
@@ -129,4 +141,73 @@ model AiChatSource {
   @@index([messageId])
   @@index([sourceQuestionId])
   @@index([sourceAnswerId])
+}
+
+model User {
+  id            String     @id
+  name          String
+  displayName   String?    @db.VarChar(80)
+  email         String
+  emailVerified Boolean    @default(false)
+  image         String?
+  role          UserRole   @default(STUDENT)
+  deletedAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  questions     Question[] @relation("UserQuestions")
+  answers       Answer[]   @relation("UserAnswers")
+
+  @@unique([email])
+  @@index([deletedAt])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
