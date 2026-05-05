@@ -6,8 +6,12 @@ import { cn } from "../utils/cn";
 /**
  * Square-cornered command primitive. Cardinal-red is the only chromatic accent
  * (used by `primary`); `secondary` and `ghost` stay neutral.
+ *
+ * `buttonVariants` is exported so consumers that need button styling on a
+ * non-`<button>` element (e.g. a Next `<Link>` for a primary CTA that
+ * navigates) can apply the same classes without re-deriving them.
  */
-const buttonVariants = cva(
+export const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-2",
     "font-medium",
@@ -56,7 +60,8 @@ export type ButtonSize = NonNullable<
 >;
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {}
 
 export function Button({

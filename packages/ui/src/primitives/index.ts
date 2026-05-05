@@ -4,7 +4,7 @@ export type { BadgeProps, BadgeTone } from "./badge";
 export { Tag } from "./tag";
 export type { TagProps, TagTone } from "./tag";
 
-export { Button } from "./button";
+export { Button, buttonVariants } from "./button";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./button";
 
 export { Surface } from "./surface";
