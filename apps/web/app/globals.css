@@ -151,6 +151,8 @@
   --radius-3xl: var(--radius-3xl);
   --radius-full: var(--radius-full);
   --radius-title: var(--radius-title);
+
+  --shadow-overlay: var(--shadow-overlay);
 }
 
 /* ------------------------------------------------------------------ */
