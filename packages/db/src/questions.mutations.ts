@@ -1,10 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "./client";
-import {
-  normalizeTagLabels,
-  slugify,
-} from "./questions.queries";
+import { normalizeTagLabels, slugify } from "./questions.queries";
 import {
   questionInclude,
   type CreateQuestionRecordInput,
@@ -21,6 +18,7 @@ export async function createQuestionRecord(
         slug: await uniqueQuestionSlug(tx, input.title),
         title: input.title,
         body: input.body,
+        authorId: input.authorId ?? null,
         authorName: input.authorName,
         authorMeta: input.authorMeta,
         searchText: buildSearchText(

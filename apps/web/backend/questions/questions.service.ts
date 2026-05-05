@@ -47,10 +47,15 @@ export async function createQuestion(
   input: CreateQuestionInput,
 ): Promise<QuestionDetailDto> {
   const viewer = await getViewer();
+  if (!viewer.isAuthenticated) {
+    throw new HttpError(401, "auth_required", "Sign in to ask a question.");
+  }
+
   const question = await persistQuestion({
     title: input.title,
     body: input.body,
     tags: input.tags,
+    authorId: viewer.id,
     authorName: input.authorDisplayName ?? viewer.displayName,
     authorMeta: input.authorMeta ?? viewer.meta,
   });

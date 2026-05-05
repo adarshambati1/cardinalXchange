@@ -11,8 +11,13 @@ export async function addAnswer(
   input: CreateAnswerInput,
 ): Promise<AnswerDto> {
   const viewer = await getViewer();
+  if (!viewer.isAuthenticated) {
+    throw new HttpError(401, "auth_required", "Sign in to post an answer.");
+  }
+
   const answer = await persistAnswer(questionId, {
     body: input.body,
+    authorId: viewer.id,
     authorName: input.authorDisplayName ?? viewer.displayName,
     authorMeta: input.authorMeta ?? viewer.meta,
   });

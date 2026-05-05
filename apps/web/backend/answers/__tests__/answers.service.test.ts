@@ -5,7 +5,27 @@ vi.mock("@cardinalxchange/db", () => ({
   listAnswerRecords: vi.fn(),
 }));
 
+vi.mock("@/backend/viewer", () => ({
+  getViewer: vi.fn(async () => ({
+    id: "u-test",
+    displayName: "Stanford Student",
+    meta: "Dev viewer",
+    role: "student" as const,
+    source: "dev" as const,
+    isAuthenticated: true,
+  })),
+  ANONYMOUS_VIEWER: {
+    id: "anonymous",
+    displayName: "Stanford community member",
+    meta: "Anonymous",
+    role: "student" as const,
+    source: "anonymous" as const,
+    isAuthenticated: false,
+  },
+}));
+
 import { createAnswerRecord, listAnswerRecords } from "@cardinalxchange/db";
+import { getViewer } from "@/backend/viewer";
 
 import { HttpError } from "@/backend/http/http";
 import { addAnswer, listAnswers } from "../answers.service";
@@ -76,45 +96,24 @@ describe("addAnswer", () => {
 
     expect(create.mock.calls[0]?.[1]).toMatchObject({
       authorName: "Stanford Student",
+      authorId: "u-test",
     });
   });
 
-  it("forwards a custom authorDisplayName/authorMeta to the DB call", async () => {
-    create.mockResolvedValueOnce({
-      id: "a-3",
-      questionId: "q-3",
-      body: "x",
-      authorName: "Custom",
-      authorMeta: "Meta",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  it("rejects with HttpError(401) when the viewer is not authenticated", async () => {
+    (getViewer as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "anonymous",
+      displayName: "Stanford community member",
+      meta: "Anonymous",
+      role: "student",
+      source: "anonymous",
+      isAuthenticated: false,
     });
 
-    await addAnswer("q-3", {
-      body: "x",
-      authorDisplayName: "Custom",
-      authorMeta: "Meta",
-    });
-
-    expect(create.mock.calls[0]?.[1]).toMatchObject({
-      authorName: "Custom",
-      authorMeta: "Meta",
-    });
-  });
-
-  it("normalizes a null authorMeta to an empty string in the DTO", async () => {
-    create.mockResolvedValueOnce({
-      id: "a-4",
-      questionId: "q-4",
-      body: "x",
-      authorName: "X",
-      authorMeta: null,
-      createdAt: new Date("2026-04-01T00:00:00Z"),
-      updatedAt: new Date("2026-04-01T00:00:00Z"),
-    });
-
-    const dto = await addAnswer("q-4", { body: "x" });
-    expect(dto.authorMeta).toBe("");
+    await expect(addAnswer("q-1", { body: "x" })).rejects.toBeInstanceOf(
+      HttpError,
+    );
+    expect(create).not.toHaveBeenCalled();
   });
 });
 

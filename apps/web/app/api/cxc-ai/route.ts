@@ -10,13 +10,18 @@ import {
 } from "@/backend/cxc-ai/services/chat.service";
 import { retrievePublicQuestionAnswerSources } from "@/backend/cxc-ai/services/retrieval.service";
 import type { AiChatMessage } from "@/backend/http/contracts";
-import { jsonError, readPayload } from "@/backend/http/http";
+import { HttpError, jsonError, readPayload } from "@/backend/http/http";
 import { parseCxcChatInput } from "@/backend/http/inputs";
+import { getViewer } from "@/backend/viewer";
 
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
+    const viewer = await getViewer();
+    if (!viewer.isAuthenticated) {
+      throw new HttpError(401, "auth_required", "Sign in to use CXC AI.");
+    }
     const payload = await readPayload(request);
     const parsed = parseCxcChatInput(payload);
     const chatId = parsed.id;

@@ -1,1 +1,1 @@
-export { getViewer, type Viewer } from "./viewer";
+export { getViewer, ANONYMOUS_VIEWER, type Viewer } from "./viewer";

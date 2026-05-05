@@ -24,6 +24,7 @@ export async function createAnswerRecord(
       data: {
         questionId: question.id,
         body: input.body,
+        authorId: input.authorId ?? null,
         authorName: input.authorName,
         authorMeta: input.authorMeta,
       },

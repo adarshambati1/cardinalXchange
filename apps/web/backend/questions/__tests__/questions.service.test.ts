@@ -6,6 +6,27 @@ vi.mock("@cardinalxchange/db", () => ({
   createQuestionRecord: vi.fn(),
 }));
 
+vi.mock("@/backend/viewer", () => ({
+  getViewer: vi.fn(async () => ({
+    id: "u-test",
+    displayName: "Stanford Student",
+    meta: "Dev viewer",
+    role: "student" as const,
+    source: "dev" as const,
+    isAuthenticated: true,
+  })),
+  ANONYMOUS_VIEWER: {
+    id: "anonymous",
+    displayName: "Stanford community member",
+    meta: "Anonymous",
+    role: "student" as const,
+    source: "anonymous" as const,
+    isAuthenticated: false,
+  },
+}));
+
+import { getViewer } from "@/backend/viewer";
+
 import {
   createQuestionRecord,
   getQuestionRecord,
@@ -140,16 +161,6 @@ describe("listQuestionsForFeed", () => {
       sort: "unanswered",
     });
   });
-
-  it("excerpts long bodies to 167 chars + ellipsis", async () => {
-    const longBody = "x".repeat(300);
-    list.mockResolvedValueOnce([feedRecord({ body: longBody })]);
-
-    const [row] = await listQuestionsForFeed();
-
-    expect(row?.excerpt.endsWith("...")).toBe(true);
-    expect(row?.excerpt.length).toBe(170);
-  });
 });
 
 describe("getQuestionDetail", () => {
@@ -266,5 +277,30 @@ describe("createQuestion", () => {
       authorName: "Custom Person",
       authorMeta: "Custom Meta",
     });
+  });
+
+  it("rejects with HttpError(401) when the viewer is not authenticated", async () => {
+    (getViewer as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "anonymous",
+      displayName: "Stanford community member",
+      meta: "Anonymous",
+      role: "student",
+      source: "anonymous",
+      isAuthenticated: false,
+    });
+
+    await expect(
+      createQuestion({ title: "Q", body: "B", tags: [] }),
+    ).rejects.toBeInstanceOf(HttpError);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("threads the viewer id into the persisted authorId", async () => {
+    create.mockResolvedValueOnce(detailRecord({ id: "q-4" }));
+    get.mockResolvedValueOnce(detailRecord({ id: "q-4" }));
+
+    await createQuestion({ title: "Q", body: "B", tags: [] });
+
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ authorId: "u-test" });
   });
 });

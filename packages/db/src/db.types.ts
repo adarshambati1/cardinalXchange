@@ -77,12 +77,14 @@ export type CreateQuestionRecordInput = {
   title: string;
   body: string;
   tags: string[];
+  authorId?: string | null;
   authorName: string;
   authorMeta?: string | null;
 };
 
 export type CreateAnswerRecordInput = {
   body: string;
+  authorId?: string | null;
   authorName: string;
   authorMeta?: string | null;
 };
