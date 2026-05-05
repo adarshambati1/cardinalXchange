@@ -7,10 +7,5 @@ import type { TagListItemDto } from "@/backend/http/contracts";
  * question count, ordered by count desc then label asc.
  */
 export async function listTagsForIndex(): Promise<TagListItemDto[]> {
-  const rows = await listTagsWithCounts();
-  return rows.map((row) => ({
-    slug: row.slug,
-    label: row.label,
-    questionCount: row.questionCount,
-  }));
+  return listTagsWithCounts();
 }

@@ -1,4 +1,18 @@
+import type { TagWithCountRecord } from "@cardinalxchange/db";
 import type { UIMessage } from "ai";
+
+/**
+ * Recursively rewrites every `Date` field in `T` into the ISO string the wire
+ * carries. Preserves arrays and nested objects so wire DTOs can be expressed
+ * as `Serialized<RecordShape & { extras }>` without re-typing every field.
+ */
+export type Serialized<T> = T extends Date
+  ? string
+  : T extends Array<infer U>
+    ? Array<Serialized<U>>
+    : T extends object
+      ? { [K in keyof T]: Serialized<T[K]> }
+      : T;
 
 export type TagKind = "topic";
 export type QuestionStatus = "open" | "answered";
@@ -9,11 +23,7 @@ export type QuestionTagDto = {
   kind: TagKind;
 };
 
-export type TagListItemDto = {
-  slug: string;
-  label: string;
-  questionCount: number;
-};
+export type TagListItemDto = TagWithCountRecord;
 
 export type QuestionSummaryDto = {
   id: string;
