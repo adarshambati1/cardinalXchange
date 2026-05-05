@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-[var(--color-surface-canvas)] text-[var(--color-ink-900)]">
       <header className="border-b border-[var(--color-border-default)] bg-white">
-        <div className="mx-auto flex max-w-[1600px] items-center px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[var(--shell-max-width)] items-center px-4 py-3 sm:px-6">
           <Link
             aria-label="CardinalXchange home"
             className="flex items-center gap-2 text-base font-semibold tracking-tight text-[var(--color-cardinal-500)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"

@@ -56,13 +56,14 @@ export function ChatShell({
 
   if (!hasMessages) {
     return (
-      <div className="flex min-h-[calc(100vh-68px)] w-full flex-col items-center justify-center px-4">
+      <div className="flex min-h-[calc(100vh-var(--header-height))] w-full flex-col items-center justify-center px-4">
         <div className="mx-auto w-full max-w-[760px]">
-          <h1 className="text-center font-serif text-4xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-5xl">
+          <h1 className="text-center font-serif text-4xl leading-tight font-semibold tracking-tight text-[var(--color-ink-900)] sm:text-5xl">
             How can I help?
           </h1>
           <p className="mt-3 text-center text-sm text-[var(--color-ink-500)]">
-            Grounded in public CardinalXchange questions. Always check the source.
+            Grounded in public CardinalXchange questions. Always check the
+            source.
           </p>
           <div className="mt-8">
             <PromptInput
@@ -79,9 +80,9 @@ export function ChatShell({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-68px)] w-full flex-col">
-      <header className="sticky top-[68px] z-10 border-b border-[var(--color-border-default)] bg-[var(--color-surface-base)] py-3">
-        <h1 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-[var(--color-ink-900)] sm:text-3xl">
+    <div className="flex min-h-[calc(100vh-var(--header-height))] w-full flex-col">
+      <header className="sticky top-[var(--header-height)] z-10 border-b border-[var(--color-border-default)] bg-[var(--color-surface-base)] py-3">
+        <h1 className="font-serif text-2xl leading-tight font-semibold tracking-tight text-[var(--color-ink-900)] sm:text-3xl">
           CXC AI
         </h1>
       </header>
@@ -96,7 +97,7 @@ export function ChatShell({
       {!isAtBottom ? (
         <button
           aria-label="Scroll to latest"
-          className="fixed bottom-32 right-8 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-700)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+          className="fixed right-8 bottom-32 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] text-[var(--color-ink-700)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
           onClick={() => scrollToBottom("smooth")}
           type="button"
         >
@@ -111,7 +112,7 @@ export function ChatShell({
         >
           CXC AI could not finish that response.{" "}
           <button
-            className="underline underline-offset-2 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+            className="underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
             onClick={() => regenerate()}
             type="button"
           >

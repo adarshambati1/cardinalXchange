@@ -26,7 +26,7 @@ export function TopCommandBar() {
       className="sticky top-0 z-30 border-b border-[var(--color-border-default)] bg-white text-[var(--color-ink-900)]"
       role="banner"
     >
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-2 px-4 py-3 sm:h-[68px] sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-0">
+      <div className="mx-auto flex max-w-[var(--shell-max-width)] flex-col gap-2 px-4 py-3 sm:h-[var(--header-height)] sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-0">
         <Link
           aria-label="CardinalXchange home"
           className="flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight text-[var(--color-cardinal-500)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"

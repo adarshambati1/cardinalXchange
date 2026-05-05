@@ -91,6 +91,12 @@
 
   /* shadows — overlays only. No body-content shadows. */
   --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* layout · the sticky top command bar height + outer page max-width.
+     Promoted because 6+ components reference 68px (sticky offsets and
+     calc(100vh - …) bodies) and 4+ layouts cap content at 1600px. */
+  --header-height: 68px;
+  --shell-max-width: 1600px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -184,7 +190,7 @@ body {
 
 ::selection {
   background: var(--color-cardinal-500);
-  color: #ffffff;
+  color: var(--color-surface-base);
 }
 
 button,

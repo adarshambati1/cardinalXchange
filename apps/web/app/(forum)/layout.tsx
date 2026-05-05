@@ -10,7 +10,7 @@ import { PageShell } from "@/features/shell";
 export default function ForumLayout({ children }: { children: ReactNode }) {
   return (
     <PageShell
-      containerClassName="mx-auto max-w-[1600px] px-4 sm:px-6"
+      containerClassName="mx-auto max-w-[var(--shell-max-width)] px-4 sm:px-6"
       mainMaxWidthClass="max-w-none"
       sideRail={null}
     >

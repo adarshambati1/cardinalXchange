@@ -20,7 +20,7 @@ export function TopicRail() {
   return (
     <nav
       aria-label="Sections"
-      className="sticky top-[68px] hidden h-[calc(100vh-68px)] w-[208px] shrink-0 self-start overflow-y-auto py-6 md:block"
+      className="sticky top-[var(--header-height)] hidden h-[calc(100vh-var(--header-height))] w-[208px] shrink-0 self-start overflow-y-auto py-6 md:block"
     >
       <div className="flex flex-col">
         {railSections.map((section, sectionIndex) => (
@@ -40,7 +40,7 @@ export function TopicRail() {
                     <Link
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex h-11 items-center gap-3 rounded-lg px-4 text-base transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]",
+                        "flex h-11 items-center gap-3 rounded-lg px-4 text-base transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none",
                         active
                           ? "bg-[var(--color-ink-100)] font-semibold text-[var(--color-ink-900)]"
                           : "text-[var(--color-ink-700)] hover:bg-[var(--color-ink-50)] hover:text-[var(--color-ink-900)]",

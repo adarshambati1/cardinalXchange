@@ -41,10 +41,10 @@ export function ChatHistoryRail({ sessions }: ChatHistoryRailProps) {
   return (
     <nav
       aria-label="Chat history"
-      className="sticky top-[68px] hidden h-[calc(100vh-68px)] w-[220px] shrink-0 flex-col gap-3 self-start overflow-y-auto py-6 pr-2 lg:flex"
+      className="sticky top-[var(--header-height)] hidden h-[calc(100vh-var(--header-height))] w-[220px] shrink-0 flex-col gap-3 self-start overflow-y-auto py-6 pr-2 lg:flex"
     >
       <Link
-        className="flex h-11 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] px-3 text-sm font-semibold text-[var(--color-ink-900)] transition-colors duration-150 ease-out hover:border-[var(--color-border-strong)] hover:bg-[var(--color-ink-50)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+        className="flex h-11 items-center justify-center rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-base)] px-3 text-sm font-semibold text-[var(--color-ink-900)] transition-colors duration-150 ease-out hover:border-[var(--color-border-strong)] hover:bg-[var(--color-ink-50)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
         href="/cxc-ai"
       >
         New chat
@@ -60,7 +60,7 @@ export function ChatHistoryRail({ sessions }: ChatHistoryRailProps) {
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
             <div key={group.key} className="flex flex-col">
-              <h2 className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
+              <h2 className="px-1 pb-2 text-[11px] font-semibold tracking-wide text-[var(--color-ink-500)] uppercase">
                 {group.label}
               </h2>
               <ul className="flex flex-col gap-1">
@@ -71,7 +71,7 @@ export function ChatHistoryRail({ sessions }: ChatHistoryRailProps) {
                       <Link
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "flex h-11 flex-col justify-center rounded-md px-3 transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-inset",
+                          "flex h-11 flex-col justify-center rounded-md px-3 transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none focus-visible:ring-inset",
                           active
                             ? "bg-[var(--color-ink-100)] font-semibold text-[var(--color-ink-900)]"
                             : "text-[var(--color-ink-700)] hover:bg-[var(--color-ink-50)] hover:text-[var(--color-ink-900)]",
@@ -127,10 +127,7 @@ type SessionGroup = {
   items: GroupedSession[];
 };
 
-function groupSessions(
-  sessions: AiChatSession[],
-  now: Date,
-): SessionGroup[] {
+function groupSessions(sessions: AiChatSession[], now: Date): SessionGroup[] {
   const today: GroupedSession[] = [];
   const week: GroupedSession[] = [];
   const older: GroupedSession[] = [];
@@ -176,11 +173,7 @@ function groupSessions(
   return groups;
 }
 
-function formatBucketTime(
-  key: GroupKey,
-  timestamp: number,
-  now: Date,
-): string {
+function formatBucketTime(key: GroupKey, timestamp: number, now: Date): string {
   if (!timestamp) {
     return "";
   }
