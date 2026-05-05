@@ -248,7 +248,7 @@ If you're comparing to another codebase you've worked in:
 | `lib/` / `utils/` | `apps/web/shared/utils/` (framework-free) + `apps/web/backend/viewer/` (server stub) |
 | `assets/` | `apps/web/public/` (Next convention) |
 | `config/` | `packages/config/` + `tsconfig.json` + `next.config.*` |
-| `tests/` | (none yet — `pnpm test` is currently a `tsc --noEmit` alias) |
+| `tests/` | `__tests__/` folders next to the code they cover (Vitest). Examples: `packages/db/src/__tests__/`, `apps/web/backend/http/__tests__/`, `apps/web/frontend/features/questions/components/__tests__/`. |
 | `scripts/` / `bin/` | (none yet — would live under `apps/web/backend/scripts/` once a real script lands) |
 | `dist/` | `apps/web/.next/` (gitignored, generated) |
 | `evals/` | `apps/web/backend/cxc-ai/evals/` (empty until first eval suite lands) |
@@ -274,7 +274,8 @@ pnpm dev                            # turbo dev → next dev --turbopack on apps
 pnpm build
 pnpm typecheck
 pnpm lint
-pnpm test                           # currently aliased to typecheck per workspace
+pnpm test                           # runs Vitest across every workspace via Turbo
+pnpm test:watch                     # Vitest in watch mode (per workspace)
 
 # Targeted
 pnpm --filter @cardinalxchange/web dev

@@ -110,3 +110,13 @@ Per `README.md` and `docs/architecture.md`:
 - Image upload flows.
 
 `README.md` and `docs/architecture.md` are the canonical product/architecture spec. Update them whenever implementation status changes.
+
+## Testing
+
+- **Vitest** is the project's test framework (Vitest 3, jsdom 26 for component tests).
+- `pnpm test` runs Vitest across every workspace via Turbo (`turbo test`). It is no longer an alias for `tsc --noEmit`.
+- `pnpm test:watch` reruns tests interactively while developing.
+- Per-workspace configs live in `apps/web/vitest.config.ts`, `packages/db/vitest.config.ts`, and `packages/ui/vitest.config.ts`. The root `vitest.workspace.ts` aggregates them so `pnpm exec vitest` from the root also runs everything.
+- Tests live in `__tests__/` folders next to the code they cover (e.g. `packages/db/src/__tests__/questions.queries.test.ts`, `apps/web/backend/http/__tests__/inputs.test.ts`, `apps/web/frontend/features/questions/components/__tests__/markdown.test.tsx`).
+- `apps/web` uses `@testing-library/react` + `@testing-library/jest-dom` (loaded via `apps/web/vitest.setup.ts`) for component tests.
+- Unit-only for now: do not require Postgres, OpenAI, or the network. Mock the Prisma client when you need to test code that imports it.
