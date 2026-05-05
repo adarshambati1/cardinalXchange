@@ -39,7 +39,7 @@ There is no Vitest/Jest harness yet — `pnpm test` only runs `tsc --noEmit`. Wh
 
 ## Database
 
-- Prisma schema lives at `packages/db/prisma/schema.prisma` (Postgres). Models: `Question`, `Answer`, `Tag`, `QuestionTag`, `AiChatSession`, `AiChatMessage`, and `AiChatSource`.
+- Prisma schema lives at `packages/db/prisma/schema.prisma` (Postgres). Models: `Question`, `Answer`, `Tag`, `QuestionTag`, `AiChatSession`, `AiChatMessage`, `AiChatSource`, and the Better Auth tables `User` (mapped to `user`), `Session` (`session`), `Account` (`account`), `Verification` (`verification`).
 - `packages/db/prisma.config.ts` resolves the migration datasource from `DIRECT_URL` → `DATABASE_URL` → a localhost fallback. Use `DIRECT_URL` for migrations when `DATABASE_URL` is a pooled Supabase connection.
 - `packages/db/src/index.ts` exports the Prisma client plus query helpers used by the web app.
 - `docker-compose.yml` runs Postgres 17 on host port `54322` and a built web container on `3000`.
@@ -66,7 +66,8 @@ Boundaries are enforced by convention, not by tooling — respect them.
   - `<feature>/<feature>.service.ts` — use-case entry points (`createQuestion`, `addAnswer`).
   - `<feature>/<feature>.queries.ts` / `.mutations.ts` — read/write functions backed by `packages/db`.
   - `cxc-ai/*` — full-page CXC AI orchestration, retrieval, AI SDK helpers, and Prisma-backed chat store. Eval suites land under `backend/cxc-ai/evals/`.
-  - `viewer/` — viewer stub (`getViewer` reads `DEV_VIEWER_*` env vars). Future auth wiring lands here.
+  - `auth/` — Better Auth wiring (`auth.ts` config, `session.ts` `getViewerFromSession`/`requireViewer`). The Next.js handlers live at `app/api/auth/[...all]/route.ts`. **Never call `auth.api.getSession()` from services or route handlers — go through `getViewer()`.**
+  - `viewer/` — `getViewer()` reads the live Better Auth session via `auth/session.ts` and falls back to anonymous (or, when `AUTH_DEV_BYPASS=1`, the `DEV_VIEWER_*` stub). This is the only seam the rest of the backend uses to read identity.
 - `apps/web/shared` — peer of `frontend/` and `backend/`. Holds framework-free helpers (`shared/utils/`) and static literal data (`shared/data/`). Importable from both sides via `@/utils/*` and `@/data/*`.
 - `packages/ui` — must stay client-safe. Never import backend, DB, AI, or auth code from this package.
 
@@ -86,6 +87,15 @@ Path alias: `@/*` resolves to `apps/web/*` (see `apps/web/tsconfig.json`). Use i
 - Human-in-the-loop: AI may draft, but it must not auto-post to the public forum. Anything public goes through the normal question form after explicit user action.
 - Persistence direction: AI SDK handles streaming/UI; Prisma owns durable session/message/source storage through generic chat models.
 
+## Auth
+
+- **Library:** Better Auth (`better-auth`) with `prismaAdapter`. The active config lives in `apps/web/backend/auth/auth.ts`.
+- **Mounted handlers:** `apps/web/app/api/auth/[...all]/route.ts` re-exports `toNextJsHandler(auth)`.
+- **Identity seam:** `getViewer()` in `apps/web/backend/viewer/viewer.ts` is the only function services or route handlers may call to read identity. Behind it, `getViewerFromSession()` in `apps/web/backend/auth/session.ts` reads the live session. Anonymous viewers have `isAuthenticated: false` and writes 401.
+- **Sign-in providers:** the `magicLink` plugin is wired now and only accepts `*@stanford.edu` addresses (server-side guard in `sendMagicLink`). Stanford SSO (SAML/OIDC) is the next provider to wire — the `STANFORD_SAML_*` / `STANFORD_OIDC_*` env vars are placeholders only; do **not** commit real Stanford IT secrets.
+- **Email transport:** development logs the magic link to the server console. Production wires an SMTP transport via `EMAIL_SERVER_*` (Mailtrap / Postmark / SES are all fine).
+- **Middleware:** `apps/web/middleware.ts` redirects unauthenticated users from `/settings` to `/login?next=…` based on the session cookie. Full validation still happens server-side in pages and route handlers.
+
 ## Environment
 
 `.env.example` covers the current variables:
@@ -95,15 +105,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 DATABASE_URL=postgresql://postgres:postgres@localhost:54322/cardinalxchange
 DIRECT_URL=postgresql://postgres:postgres@localhost:54322/cardinalxchange
 OPENAI_API_KEY=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
-Optional, read at runtime: `OPENAI_MODEL` (defaults to `gpt-5-mini`), `WEB_CONTEXT_ENDPOINT`, `WEB_CONTEXT_API_KEY`, `DEV_VIEWER_ID`, `DEV_VIEWER_NAME`, `DEV_VIEWER_META`. Do not introduce auth-related env vars yet — auth, roles, admins, reputation, and notifications are explicitly the **last** items on the roadmap.
+Optional, read at runtime: `OPENAI_MODEL` (defaults to `gpt-5-mini`), `WEB_CONTEXT_ENDPOINT`, `WEB_CONTEXT_API_KEY`, `EMAIL_SERVER_HOST` / `EMAIL_SERVER_PORT` / `EMAIL_SERVER_USER` / `EMAIL_SERVER_PASSWORD` / `EMAIL_FROM`, `STANFORD_SAML_*` / `STANFORD_OIDC_*` (placeholders for prod IT to fill), `AUTH_DEV_BYPASS` (`=1` to allow `DEV_VIEWER_*` to stand in for a real session), `DEV_VIEWER_ID` / `DEV_VIEWER_NAME` / `DEV_VIEWER_META`.
 
 ## Out Of Scope (do not add)
 
 Per `README.md` and `docs/architecture.md`:
 
-- Login screens, NextAuth, SUNet OAuth wiring (auth is the last milestone).
 - Courses, pinned courses, course pages, course-specific navigation.
 - Reputation, notifications, admin/moderation tooling.
 - Redis, Meilisearch/Elasticsearch, object storage, analytics.

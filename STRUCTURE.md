@@ -35,6 +35,12 @@ Wave 6 split the app into three top-level peers — `app/` (Next-required), `bac
 ```
 apps/web/
 ├── app/                          # App Router. Routes only — thin.
+│   ├── (auth)/                   # auth surface — its own minimal layout, no shell wrap
+│   │   ├── layout.tsx            # bare top bar + centered card
+│   │   └── login/
+│   │       ├── page.tsx          # /login (Suspense-wrapped LoginForm)
+│   │       ├── loading.tsx
+│   │       └── error.tsx
 │   ├── (forum)/                  # route group for the public Q&A surface
 │   │   ├── layout.tsx            # PageShell with TopicRail, no SideRail, max-w-[1600px]
 │   │   ├── page.tsx              # `/` redirects to /questions
@@ -50,9 +56,14 @@ apps/web/
 │   │   │   ├── page.tsx          # /ask form
 │   │   │   ├── loading.tsx
 │   │   │   └── error.tsx
-│   │   └── tags/
-│   │       ├── page.tsx          # /tags index grid
-│   │       └── loading.tsx
+│   │   ├── tags/
+│   │   │   ├── page.tsx          # /tags index grid
+│   │   │   └── loading.tsx
+│   │   ├── users/
+│   │   │   └── [userId]/
+│   │   │       └── page.tsx      # /users/[id] public profile
+│   │   └── settings/
+│   │       └── page.tsx          # /settings (redirects to /login if anonymous)
 │   ├── cxc-ai/                   # CXC AI chat (separate layout — chat-history rail)
 │   │   ├── layout.tsx            # PageShell with TopicRail + ChatHistoryRail
 │   │   ├── page.tsx              # /cxc-ai new chat
@@ -61,6 +72,8 @@ apps/web/
 │   │   └── [chatId]/
 │   │       └── page.tsx          # /cxc-ai/[id] resume
 │   ├── api/                      # route handlers (the HTTP edge of backend/)
+│   │   ├── auth/[...all]/route.ts # Better Auth handler mount
+│   │   ├── users/me/route.ts     # GET/PATCH/DELETE current viewer
 │   │   ├── questions/route.ts
 │   │   ├── questions/[questionId]/route.ts
 │   │   ├── questions/[questionId]/answers/route.ts
@@ -70,10 +83,13 @@ apps/web/
 │   │   ├── cxc-ai/chats/[chatId]/messages/route.ts
 │   │   └── cxc-ai/chats/[chatId]/stream/route.ts
 │   ├── layout.tsx                # html/body/fonts only — no shell wrap here
+│   ├── middleware.ts             # session-cookie redirect for /settings (one level above app/)
 │   ├── globals.css               # design tokens + Tailwind v4 @theme inline; @source "../frontend"
 │   └── fonts.ts                  # next/font/google: Inter (sans) + JetBrains Mono
 ├── backend/                      # app-local backend orchestration (no React)
 │   ├── http/                     # HttpError, jsonError, jsonOk, zod inputs, wire DTO contracts
+│   ├── auth/                     # Better Auth wiring (auth.ts), getViewerFromSession/requireViewer (session.ts)
+│   ├── users/                    # users.service.ts (getUserProfile, setUserDisplayName, deleteOwnAccount)
 │   ├── questions/                # listQuestionsForFeed, getQuestionDetail, createQuestion, mappers, queries, mutations, types
 │   ├── answers/                  # addAnswer, listAnswers, mutations, types
 │   ├── search/                   # search.service, queries, types
@@ -88,10 +104,15 @@ apps/web/
 │   │   ├── services/             # chat.service, retrieval.service, web-context.service, citation-extraction.service, stream-registry
 │   │   ├── types/                # cxc.types
 │   │   └── evals/                # CXC AI eval suites land here (empty)
-│   ├── viewer/                   # getViewer (DEV_VIEWER_* stub); future auth lands here
+│   ├── viewer/                   # getViewer reads the live Better Auth session (anonymous fallback; AUTH_DEV_BYPASS=1 honors DEV_VIEWER_*)
 │   └── index.ts
 ├── frontend/                     # umbrella for client-side feature modules
+│   ├── auth/
+│   │   └── auth-client.ts        # createAuthClient() + magicLinkClient (signIn/signOut/useSession)
 │   └── features/
+│       ├── auth/
+│       │   ├── components/       # LoginForm, SettingsForm
+│       │   └── index.ts
 │       ├── questions/
 │       │   ├── components/       # QuestionFeed, QuestionRow, QuestionDetail, AnswerList, AnswerComposer, Markdown
 │       │   └── index.ts          # barrel
@@ -103,7 +124,7 @@ apps/web/
 │       │   ├── hooks/            # use-cxc-chat, use-stick-to-bottom
 │       │   └── index.ts
 │       └── shell/
-│           ├── components/       # PageShell, TopCommandBar, TopicRail, SideRail
+│           ├── components/       # PageShell, TopCommandBar, TopicRail, SideRail, UserMenu
 │           └── index.ts
 ├── shared/                       # framework-free helpers + static data, importable from frontend or backend
 │   ├── utils/                    # generic pure helpers (no framework deps)
@@ -116,15 +137,15 @@ apps/web/
 
 Defined in `apps/web/tsconfig.json`. Every import inside `apps/web` should use one of these instead of long relative paths:
 
-| Alias | Resolves to |
-|---|---|
-| `@/*` | `apps/web/*` |
-| `@/app/*` | `apps/web/app/*` |
-| `@/backend/*` | `apps/web/backend/*` |
-| `@/frontend/*` | `apps/web/frontend/*` |
+| Alias          | Resolves to                    |
+| -------------- | ------------------------------ |
+| `@/*`          | `apps/web/*`                   |
+| `@/app/*`      | `apps/web/app/*`               |
+| `@/backend/*`  | `apps/web/backend/*`           |
+| `@/frontend/*` | `apps/web/frontend/*`          |
 | `@/features/*` | `apps/web/frontend/features/*` |
-| `@/utils/*` | `apps/web/shared/utils/*` |
-| `@/data/*` | `apps/web/shared/data/*` |
+| `@/utils/*`    | `apps/web/shared/utils/*`      |
+| `@/data/*`     | `apps/web/shared/data/*`       |
 
 External packages keep their `@cardinalxchange/*` ids (`@cardinalxchange/db`, `@cardinalxchange/ui`).
 
@@ -180,7 +201,7 @@ Consumed via `extends: "@cardinalxchange/config/tsconfig/<preset>.json"` in work
 ## Naming Conventions
 
 - **Files**: kebab-case. No PascalCase filenames.
-- **Suffixes** describe the *role* of the file:
+- **Suffixes** describe the _role_ of the file:
   - `*.types.ts` — types and Zod schemas only
   - `*.service.ts` — server-side orchestration / use-case entry points
   - `*.queries.ts` — read functions against the DB
@@ -196,18 +217,19 @@ Consumed via `extends: "@cardinalxchange/config/tsconfig/<preset>.json"` in work
 
 These are enforced in code review, not by tooling. Do not break them:
 
-| From | May import | May not import |
-|---|---|---|
-| `app/**` (route handlers + pages) | `@/features/*`, `@/backend/*`, `@cardinalxchange/db` (only inside route handlers and server components), `@cardinalxchange/ui` | — |
-| `frontend/features/**` | `@cardinalxchange/ui`, `@/utils/*`, `@/data/*`, `@/backend/http` (DTOs only) | `@cardinalxchange/db`, `@/backend/<feature>/*` internals |
-| `backend/**` | `@cardinalxchange/db`, `@/utils/*`, `@/data/*` | React, `@cardinalxchange/ui`, `@/frontend/**`, Next route objects beyond `NextResponse` |
-| `shared/**` | self only | React, Next, Prisma, `@cardinalxchange/db`, `@cardinalxchange/ui` |
-| `packages/ui/**` | self only | backend, db, ai, auth, anything outside the package |
-| `packages/db/**` | Prisma client | React, Next, Zod for validation (validation lives in `backend/http/inputs.ts`) |
+| From                              | May import                                                                                                                     | May not import                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `app/**` (route handlers + pages) | `@/features/*`, `@/backend/*`, `@cardinalxchange/db` (only inside route handlers and server components), `@cardinalxchange/ui` | —                                                                                       |
+| `frontend/features/**`            | `@cardinalxchange/ui`, `@/utils/*`, `@/data/*`, `@/backend/http` (DTOs only)                                                   | `@cardinalxchange/db`, `@/backend/<feature>/*` internals                                |
+| `backend/**`                      | `@cardinalxchange/db`, `@/utils/*`, `@/data/*`                                                                                 | React, `@cardinalxchange/ui`, `@/frontend/**`, Next route objects beyond `NextResponse` |
+| `shared/**`                       | self only                                                                                                                      | React, Next, Prisma, `@cardinalxchange/db`, `@cardinalxchange/ui`                       |
+| `packages/ui/**`                  | self only                                                                                                                      | backend, db, ai, auth, anything outside the package                                     |
+| `packages/db/**`                  | Prisma client                                                                                                                  | React, Next, Zod for validation (validation lives in `backend/http/inputs.ts`)          |
 
 ## Where Things Live (cookbook)
 
 **Adding a new product feature (e.g., bookmarks):**
+
 1. Add Prisma model to `packages/db/prisma/schema.prisma` and run `prisma:dev`
 2. Add `packages/db/src/bookmarks.queries.ts` and `bookmarks.mutations.ts`; export from `packages/db/src/index.ts`
 3. Add wire DTO to `apps/web/backend/http/contracts.ts`
@@ -219,11 +241,13 @@ These are enforced in code review, not by tooling. Do not break them:
 9. If the rail needs an entry, edit `apps/web/shared/data/topics.data.ts` and `apps/web/frontend/features/shell/components/topic-rail.tsx` `resolveActiveId`
 
 **Adding a primitive used by 3+ features (e.g., Modal):**
+
 1. Add to `packages/ui/src/primitives/modal.tsx`
 2. Re-export from `packages/ui/src/primitives/index.ts` and `packages/ui/src/index.ts`
 3. Consume via `@cardinalxchange/ui` (root barrel only, no deep imports)
 
 **Adding a CXC AI tool:**
+
 1. Define the tool in `apps/web/backend/cxc-ai/agents/cxc.agent.ts`
 2. If it needs a prompt, add `apps/web/backend/cxc-ai/agents/prompts/<tool>.prompt.ts`
 3. If the result must render in chat, parse it in `apps/web/frontend/features/cxc-ai/components/message-list.tsx`
@@ -232,39 +256,40 @@ These are enforced in code review, not by tooling. Do not break them:
 
 If you're comparing to another codebase you've worked in:
 
-| Other-codebase folder | CardinalXchange equivalent |
-|---|---|
-| `src/` | `apps/web/` (and `packages/*/src/`) |
-| `routes/` | `apps/web/app/**/page.tsx` and `apps/web/app/api/**/route.ts` (folder-as-route, file-as-handler) |
-| `components/` | `apps/web/frontend/features/<feature>/components/` + `packages/ui/src/primitives/` |
-| `services/` | `apps/web/backend/<feature>/<feature>.service.ts` |
-| `controllers/` | `apps/web/app/api/**/route.ts` (Next route handlers — the HTTP edge of `backend/`) |
-| `models/` | `packages/db/prisma/schema.prisma` |
-| `repositories/` / `dao/` | `packages/db/src/*.queries.ts` and `*.mutations.ts` |
-| `dto/` | `apps/web/backend/http/contracts.ts` |
-| `validators/` | `apps/web/backend/http/inputs.ts` (Zod parsers) |
-| `middleware/` | (none yet — Next supports `apps/web/middleware.ts` if needed) |
-| `hooks/` | `apps/web/frontend/features/<feature>/hooks/` |
-| `lib/` / `utils/` | `apps/web/shared/utils/` (framework-free) + `apps/web/backend/viewer/` (server stub) |
-| `assets/` | `apps/web/public/` (Next convention) |
-| `config/` | `packages/config/` + `tsconfig.json` + `next.config.*` |
-| `tests/` | `__tests__/` folders next to the code they cover (Vitest). Examples: `packages/db/src/__tests__/`, `apps/web/backend/http/__tests__/`, `apps/web/frontend/features/questions/components/__tests__/`. |
-| `scripts/` / `bin/` | (none yet — would live under `apps/web/backend/scripts/` once a real script lands) |
-| `dist/` | `apps/web/.next/` (gitignored, generated) |
-| `evals/` | `apps/web/backend/cxc-ai/evals/` (empty until first eval suite lands) |
-| `logs/` | (runtime only, streamed to stdout — not a checked-in folder) |
+| Other-codebase folder    | CardinalXchange equivalent                                                                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/`                   | `apps/web/` (and `packages/*/src/`)                                                                                                                                                                  |
+| `routes/`                | `apps/web/app/**/page.tsx` and `apps/web/app/api/**/route.ts` (folder-as-route, file-as-handler)                                                                                                     |
+| `components/`            | `apps/web/frontend/features/<feature>/components/` + `packages/ui/src/primitives/`                                                                                                                   |
+| `services/`              | `apps/web/backend/<feature>/<feature>.service.ts`                                                                                                                                                    |
+| `controllers/`           | `apps/web/app/api/**/route.ts` (Next route handlers — the HTTP edge of `backend/`)                                                                                                                   |
+| `models/`                | `packages/db/prisma/schema.prisma`                                                                                                                                                                   |
+| `repositories/` / `dao/` | `packages/db/src/*.queries.ts` and `*.mutations.ts`                                                                                                                                                  |
+| `dto/`                   | `apps/web/backend/http/contracts.ts`                                                                                                                                                                 |
+| `validators/`            | `apps/web/backend/http/inputs.ts` (Zod parsers)                                                                                                                                                      |
+| `middleware/`            | `apps/web/middleware.ts` — Better Auth session-cookie redirect for `/settings`                                                                                                                       |
+| `hooks/`                 | `apps/web/frontend/features/<feature>/hooks/`                                                                                                                                                        |
+| `lib/` / `utils/`        | `apps/web/shared/utils/` (framework-free) + `apps/web/backend/viewer/` (session reader)                                                                                                              |
+| `assets/`                | `apps/web/public/` (Next convention)                                                                                                                                                                 |
+| `config/`                | `packages/config/` + `tsconfig.json` + `next.config.*`                                                                                                                                               |
+| `tests/`                 | `__tests__/` folders next to the code they cover (Vitest). Examples: `packages/db/src/__tests__/`, `apps/web/backend/http/__tests__/`, `apps/web/frontend/features/questions/components/__tests__/`. |
+| `scripts/` / `bin/`      | (none yet — would live under `apps/web/backend/scripts/` once a real script lands)                                                                                                                   |
+| `dist/`                  | `apps/web/.next/` (gitignored, generated)                                                                                                                                                            |
+| `evals/`                 | `apps/web/backend/cxc-ai/evals/` (empty until first eval suite lands)                                                                                                                                |
+| `logs/`                  | (runtime only, streamed to stdout — not a checked-in folder)                                                                                                                                         |
 
 ## Out Of Scope
 
 Per `CLAUDE.md` and `docs/architecture.md`, these are explicitly NOT in the codebase yet and should not be added:
 
-- Auth (NextAuth, SUNet OAuth, login screens)
 - Courses, course pages, pinned courses
 - Reputation, votes, notifications, admin/moderation
 - Redis, Meilisearch/Elasticsearch, object storage, analytics
 - Image upload flows
 - Seed data / fixtures (empty DB is canonical)
 - Search ranking beyond title/tag matches
+
+Auth (Better Auth + Stanford magic link) is now in scope; SAML/OIDC SSO is the next step but waits on Stanford IT metadata.
 
 ## Common Commands
 
@@ -288,4 +313,4 @@ docker compose up -d postgres
 docker exec -it cardinalxchange-postgres psql -U postgres -d cardinalxchange
 ```
 
-`docs/architecture.md` is the canonical product/architecture spec and supersedes this file when they disagree on intent. This file documents *layout*; that file documents *intent*.
+`docs/architecture.md` is the canonical product/architecture spec and supersedes this file when they disagree on intent. This file documents _layout_; that file documents _intent_.

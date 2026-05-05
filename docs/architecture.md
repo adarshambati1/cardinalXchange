@@ -8,7 +8,8 @@ Stage 0 locks the product to a small Q&A surface:
 
 - Public questions, public answers, tags, and unanswered filtering are in scope.
 - Courses are out of scope. Do not add `Course`, pinned courses, course pages, course dashboards, or course-specific navigation.
-- Votes, reputation, roles/admins, notifications, auth/SUNet UI, Better Auth, profile/settings, saved drafts, and autosave are out of scope.
+- Authentication is now in scope: Better Auth with a stanford.edu magic-link plugin. Stanford SAML/OIDC is the next provider to add. Profile + settings ship alongside auth.
+- Votes, reputation, roles/admins, notifications, saved drafts, and autosave remain out of scope.
 - Draft text may exist only as transient client form state. Drafts die if the user does not post them.
 - Nothing becomes public until the user explicitly posts through the public forum flow.
 - CXC AI is full-page only at `/cxc-ai` and `/cxc-ai/[chatId]`; it must not be implemented as a side panel or inline question-form helper.
@@ -22,12 +23,12 @@ Implemented in the current MVP push:
 - Question list/detail pages read from Postgres through Prisma-backed server services.
 - Question and answer submissions write to Postgres. Draft form state is not saved.
 - CXC AI uses AI SDK chat primitives at the app boundary and persists generic chat sessions/messages through Prisma.
+- Authentication is wired with Better Auth + the magic-link plugin (stanford.edu only). `getViewer()` reads the live session; write routes 401 when anonymous. `/login`, `/users/[id]`, and `/settings` exist.
 - Docker Compose starts local Postgres and the web app.
 
 Not implemented yet:
 
-- Authentication or a login screen.
-- User profiles/settings.
+- Stanford SAML/OIDC SSO provider (placeholder env vars only — needs IT metadata).
 - Postgres full-text ranking beyond the initial controlled internal retrieval query helpers.
 
 ## Intended MVP Architecture
@@ -61,7 +62,7 @@ Deployment should use Supabase as the managed Postgres provider. Local developme
 
 - `apps/web/app`: Next.js App Router route tree. Keep layouts, pages, loading/error states, and route handlers here. `app/api/**/route.ts` is the HTTP edge of `backend/`.
 - `apps/web/frontend/features`: Product-facing frontend modules grouped by feature. Components, hooks, view models, and frontend-only state belong here when they outgrow a single route.
-- `apps/web/backend`: App-local backend orchestration. Route handlers and server actions should call into this layer for question, answer, tag, search, and optional CXC AI use cases. The viewer stub lives at `backend/viewer/`; future auth wiring lands there. CXC AI eval suites live at `backend/cxc-ai/evals/`.
+- `apps/web/backend`: App-local backend orchestration. Route handlers and server actions should call into this layer for question, answer, tag, search, user, and optional CXC AI use cases. Better Auth wiring lives at `backend/auth/`; the identity seam (`getViewer()`) lives at `backend/viewer/`. CXC AI eval suites live at `backend/cxc-ai/evals/`.
 - `apps/web/shared`: Framework-free helpers (`shared/utils/`) and static literal data (`shared/data/`). Importable from both `frontend/` and `backend/`.
 - `packages/db`: Prisma schema, migrations, generated client, seed workflow, and Postgres query helpers. This is the only shared package that should know about Prisma.
 - `packages/ui`: Shared React primitives and styling helpers. This package must stay client-safe and must not import database, AI, or auth code.
@@ -123,19 +124,20 @@ packages/db/
 
 Start with the smallest model set that supports the ask forum:
 
-- `Question`: title, body, author display text, tags, answer count, created timestamp, last activity timestamp.
-- `Answer`: body, author display text, question relation, and created/updated timestamps.
+- `Question`: title, body, author display text, tags, answer count, created timestamp, last activity timestamp, optional `authorId` linked to `User`.
+- `Answer`: body, author display text, question relation, optional `authorId` linked to `User`, and created/updated timestamps.
 - `Tag`: stable slug and display label.
 - `QuestionTag`: join table connecting questions to tags.
 - `AiChatSession`: generic table for private CXC AI chat sessions. One chat has one ID.
 - `AiChatMessage`: generic table for individual CXC AI messages. The AI SDK determines app-level message primitives.
 - `AiChatSource`: generic table for source-labeled public questions/answers retrieved for a CXC AI response.
+- Better Auth tables (lowercase mapped names): `user` (id, name, displayName, email, emailVerified, image, role, deletedAt, createdAt, updatedAt), `session` (id, userId, token, expiresAt, ipAddress, userAgent, createdAt, updatedAt), `account` (provider linkage), `verification` (email magic-link tokens).
 
 Use server-side validation at write boundaries. Client-visible DTOs should avoid leaking internal-only fields.
 
 Courses are not part of the MVP data model. Do not add `Course`, pinned courses, course pages, or course-specific navigation unless that scope is explicitly reopened.
 
-Do not add auth/profile/settings models yet. Better Auth, SUNet-backed profiles, user settings, roles/admins, reputation, votes, notifications, saved drafts, and autosave are later milestones.
+Roles/admins, reputation, votes, notifications, saved drafts, and autosave remain later milestones. Auth, profiles, and settings are now in scope per the Auth section below.
 
 ## Search
 
@@ -172,17 +174,32 @@ The AI SDK does not replace the CardinalXchange persistence model. The AI SDK de
 
 Implementation decision: use Prisma for CXC AI persistence. The AI SDK route should stream the model response, then save the completed assistant message, user message, retrieved sources, and session metadata through Prisma. The CXC AI page should load previous messages from Prisma and pass them into the AI SDK chat UI as initial state. One chat maps to one `AiChatSession` ID. Until SUNet auth exists, do not promise real user-specific history outside local/dev viewer behavior.
 
+## Auth
+
+**Library:** Better Auth (`better-auth`) with the Prisma adapter. Configuration lives in `apps/web/backend/auth/auth.ts` and the Next.js handlers mount at `app/api/auth/[...all]/route.ts`.
+
+**Identity seam:** `apps/web/backend/viewer/getViewer()` is the only call that may read identity from inside services and route handlers. It delegates to `getViewerFromSession()` (which calls `auth.api.getSession()`) and falls back to an anonymous viewer when there is no session. Routes that write require `viewer.isAuthenticated` and 401 otherwise.
+
+**Sign-in providers:**
+
+- **Magic link (active):** `magicLink` plugin restricted to `*@stanford.edu` addresses inside `sendMagicLink`. In dev the link is logged to the server console; in prod an SMTP transport plugs in via `EMAIL_SERVER_*`.
+- **Stanford SAML/OIDC (placeholder):** the `STANFORD_SAML_*` / `STANFORD_OIDC_*` env vars are committed empty. Better Auth's SSO plugin lands once Stanford IT shares real metadata. Do **not** commit production credentials.
+
+**Middleware:** `apps/web/middleware.ts` redirects unauthenticated users from `/settings` to `/login?next=…` based on the session cookie. Full validation still happens server-side.
+
+**Sessions:** Better Auth manages session cookies and DB rows automatically. The cookie is the source of truth; lookups go through `auth.api.getSession()` reading the `session` table.
+
 ## Profile And Settings
 
-Profile and settings should come after the core Q&A and CXC AI foundations. They require Better Auth/SUNet auth because user-specific pages and settings need a reliable viewer identity.
+Profile and settings ship together with auth.
 
-Initial profile/settings scope after auth:
+Implemented:
 
-- Public profile display.
-- User's questions.
-- User's answers.
-- User's CXC AI chat sessions if persistence is enabled.
-- Basic display/preferences settings.
+- `/users/[userId]` public profile: avatar, display name, joined-on date, asked/answered counts, recent questions and answers.
+- `/settings` (auth-required): display name editor, read-only Stanford email, soft-delete account flow.
+- `/api/users/me` GET / PATCH / DELETE for the current viewer.
+
+Soft-deletes scrub PII (name, email, image) and stamp `deletedAt`. Authored questions and answers stay on the forum so threads remain readable; the profile page filters on `deletedAt: null` so deleted users 404.
 
 Postpone roles, admins, reputation, votes, notifications, and admin controls until after this basic user surface exists.
 
@@ -213,18 +230,20 @@ pnpm --filter @cardinalxchange/db prisma db seed
 pnpm dev
 ```
 
-Required local environment once the backend exists:
+Required local environment:
 
 ```txt
 DATABASE_URL=
 DIRECT_URL=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 OPENAI_API_KEY=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
 Only require `OPENAI_API_KEY` for CXC AI; the base forum should continue to run without AI configured.
 
-Do not add NextAuth, Stanford OAuth, or login-screen variables until authentication becomes an explicit milestone.
+`BETTER_AUTH_SECRET` is required for any auth flow (generate with `openssl rand -base64 32`). `EMAIL_SERVER_*` is optional in dev — without it, magic links print to the server console. Stanford SSO is opt-in via `STANFORD_SAML_*` / `STANFORD_OIDC_*`; commit placeholders only and fill real metadata in production secrets.
 
 ## Docker And Postgres
 
@@ -273,7 +292,8 @@ Production migrations need an explicit workflow before launch. Do not rely on re
 - Keep backend routes in `apps/web/app/api` and use `apps/web/backend` for orchestration.
 - Keep Prisma/Postgres details in `packages/db`.
 - Use Prisma and Postgres as the initial persistence/search layer.
-- Do not add auth-first architecture yet; the current MVP has no login screen.
+- Auth flows go through Better Auth and `getViewer()`. Never call `auth.api.getSession()` directly from services or route handlers.
+- Stanford SAML/OIDC credentials live in production secrets only; committed config carries placeholders.
 - Do not add courses, pinned courses, votes, reputation, roles/admins, notifications, saved drafts, or autosave.
 - Keep CXC AI full-page only at `/cxc-ai` and `/cxc-ai/[chatId]`.
 - Restrict CXC AI retrieval to public questions and answers, with source-labeled results.
