@@ -1,8 +1,8 @@
+import type { Tag } from "@prisma/client";
+
 import { prisma } from "./client";
 
-export type TagWithCountRecord = {
-  slug: string;
-  label: string;
+export type TagWithCountRecord = Pick<Tag, "slug" | "label"> & {
   questionCount: number;
 };
 

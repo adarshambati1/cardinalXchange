@@ -1,12 +1,11 @@
+import type { Answer, Question, User } from "@prisma/client";
+
 import { prisma } from "./client";
 
-export type UserProfileRecord = {
-  id: string;
-  name: string;
-  displayName: string | null;
-  email: string;
-  image: string | null;
-  createdAt: Date;
+export type UserProfileRecord = Pick<
+  User,
+  "id" | "name" | "displayName" | "email" | "image" | "createdAt"
+> & {
   questionCount: number;
   answerCount: number;
 };
@@ -42,21 +41,17 @@ export async function getUserProfileRecord(
 }
 
 export type UserActivityRecord = {
-  questions: Array<{
-    id: string;
-    slug: string;
-    title: string;
-    createdAt: Date;
-    answerCount: number;
-  }>;
-  answers: Array<{
-    id: string;
-    questionId: string;
-    questionSlug: string;
-    questionTitle: string;
-    body: string;
-    createdAt: Date;
-  }>;
+  questions: Array<
+    Pick<Question, "id" | "slug" | "title" | "createdAt"> & {
+      answerCount: number;
+    }
+  >;
+  answers: Array<
+    Pick<Answer, "id" | "questionId" | "body" | "createdAt"> & {
+      questionSlug: string;
+      questionTitle: string;
+    }
+  >;
 };
 
 export async function getUserActivityRecord(
