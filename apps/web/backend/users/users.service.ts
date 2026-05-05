@@ -9,30 +9,25 @@ import {
 
 import { HttpError } from "@/backend/http/http";
 
-export type UserProfileDto = {
-  id: string;
-  name: string;
+type UserActivityQuestion = UserActivityRecord["questions"][number];
+type UserActivityAnswer = UserActivityRecord["answers"][number];
+
+type UserProfileQuestionDto = Omit<UserActivityQuestion, "createdAt"> & {
+  createdAt: string;
+};
+
+type UserProfileAnswerDto = Omit<UserActivityAnswer, "createdAt"> & {
+  createdAt: string;
+};
+
+export type UserProfileDto = Pick<
+  UserProfileRecord,
+  "id" | "name" | "email" | "image" | "questionCount" | "answerCount"
+> & {
   displayName: string;
-  email: string;
-  image: string | null;
   joinedAt: string;
-  questionCount: number;
-  answerCount: number;
-  questions: Array<{
-    id: string;
-    slug: string;
-    title: string;
-    createdAt: string;
-    answerCount: number;
-  }>;
-  answers: Array<{
-    id: string;
-    questionId: string;
-    questionSlug: string;
-    questionTitle: string;
-    body: string;
-    createdAt: string;
-  }>;
+  questions: UserProfileQuestionDto[];
+  answers: UserProfileAnswerDto[];
 };
 
 export async function getUserProfile(userId: string): Promise<UserProfileDto> {
