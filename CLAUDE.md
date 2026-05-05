@@ -120,3 +120,10 @@ Per `README.md` and `docs/architecture.md`:
 - Tests live in `__tests__/` folders next to the code they cover (e.g. `packages/db/src/__tests__/questions.queries.test.ts`, `apps/web/backend/http/__tests__/inputs.test.ts`, `apps/web/frontend/features/questions/components/__tests__/markdown.test.tsx`).
 - `apps/web` uses `@testing-library/react` + `@testing-library/jest-dom` (loaded via `apps/web/vitest.setup.ts`) for component tests.
 - Unit-only for now: do not require Postgres, OpenAI, or the network. Mock the Prisma client when you need to test code that imports it.
+
+## Development
+
+- Git commits run `lint-staged` via a husky `pre-commit` hook: `prettier --write` then `eslint --fix` on staged `*.{ts,tsx,js,mjs,cjs}` files, plus `prettier --write` on staged `*.{md,json,css,yml,yaml}` files. Unfixable ESLint errors abort the commit.
+- The hook is provisioned by the root `prepare` script (`husky`), so a fresh `pnpm install` wires it up automatically.
+- The hook runs on staged files only — it does not run typecheck or vitest. Run `pnpm typecheck` / `pnpm test` yourself before pushing.
+- Do not bypass the hook with `--no-verify`; fix the lint error instead.
